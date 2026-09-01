@@ -17,5 +17,6 @@ router.use(authorizeRoles('ADMIN'));
 
 router.post('/', validateRequest(createServiceSchema), serviceController.createService);
 router.patch('/:id', validateRequest(updateServiceSchema), serviceController.updateService);
+router.delete('/:id', serviceController.deleteService);
 
 export default router;

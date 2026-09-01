@@ -78,3 +78,17 @@ export const updateService = async (id: string, data: any) => {
     data,
   });
 };
+
+export const deleteService = async (id: string) => {
+  const service = await prisma.service.findUnique({ where: { id } });
+  if (!service) throw new Error('Service not found');
+
+  // Cascade delete related records to prevent foreign key constraint violations
+  await prisma.staffService.deleteMany({ where: { serviceId: id } });
+  await prisma.rating.deleteMany({ where: { serviceId: id } });
+  await prisma.appointment.deleteMany({ where: { serviceId: id } });
+
+  return prisma.service.delete({
+    where: { id },
+  });
+};

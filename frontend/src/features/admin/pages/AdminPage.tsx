@@ -7,6 +7,7 @@ import AdminStaff from '../components/AdminStaff';
 import AdminServices from '../components/AdminServices';
 import AdminAppointments from '../components/AdminAppointments';
 import AdminNews from '../components/AdminNews';
+import AdminLandingPage from '../components/AdminLandingPage';
 import { mockAdminStats } from '../types/admin';
 import { dashboardService } from '../../../services/dashboard.service';
 
@@ -38,6 +39,8 @@ function AdminPage() {
       case 'overview':
       case 'reports': // Simplification: showing overview for reports too
         return <DataOverview stats={stats} />;
+      case 'landing':
+        return <AdminLandingPage />;
       case 'users':
         return <AdminUsers />;
       case 'staff':

@@ -31,6 +31,7 @@ export const createRating = async (userId: string, data: any) => {
         serviceId: appointment.serviceId,
         score: data.score,
         comment: data.comment,
+        satisfaction: data.satisfaction,
       },
     });
   });
@@ -55,5 +56,26 @@ export const getRatingsByService = async (serviceId: string) => {
       staff: { include: { user: { select: { firstName: true, lastName: true } } } },
     },
     orderBy: { createdAt: 'desc' },
+  });
+};
+
+export const getAllRatings = async () => {
+  return prisma.rating.findMany({
+    include: {
+      user: { select: { firstName: true, lastName: true, email: true } },
+      staff: { include: { user: { select: { firstName: true, lastName: true } } } },
+      service: { select: { name: true } },
+      appointment: { select: { date: true, startTime: true } }
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+};
+
+export const deleteRating = async (ratingId: string) => {
+  const rating = await prisma.rating.findUnique({ where: { id: ratingId } });
+  if (!rating) throw new Error('Rating not found');
+  
+  return prisma.rating.delete({
+    where: { id: ratingId }
   });
 };

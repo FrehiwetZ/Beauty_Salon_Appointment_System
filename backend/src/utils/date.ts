@@ -28,10 +28,8 @@ export const isTimeOverlapping = (start1: string, end1: string, start2: string, 
   return Math.max(s1, s2) < Math.min(e1, e2);
 };
 
-/**
- * Gets day of week integer (0-6) from a YYYY-MM-DD string
- */
 export const getDayOfWeek = (dateString: string): number => {
-  const date = new Date(dateString);
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.getDay();
 };

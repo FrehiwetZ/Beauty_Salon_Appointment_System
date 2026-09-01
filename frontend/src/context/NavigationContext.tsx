@@ -21,7 +21,7 @@ const NavigationContext = createContext<NavigationContextType>({
 export const useNavigation = () => useContext(NavigationContext);
 
 export const NavigationProvider = ({ children }: { children: ReactNode }) => {
-  const [page, setPage] = useState('dashboard');
+  const [page, setPage] = useState('landing');
   const [redirectAfterLogin, setRedirectAfterLogin] = useState<string | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | string | null>(null);
   

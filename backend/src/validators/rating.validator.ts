@@ -5,5 +5,6 @@ export const createRatingSchema = z.object({
     appointmentId: z.string().uuid(),
     score: z.number().int().min(1).max(5),
     comment: z.string().optional(),
+    satisfaction: z.enum(['Satisfied', 'Medium', 'Not Satisfied']),
   }),
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../../../components/Button';
+import ImageUpload from '../../../components/ImageUpload';
 import { useData } from '../../../context/DataContext';
 import { NewsPost } from '../../News/types/news';
 
@@ -10,11 +11,14 @@ function AdminNews() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newPost = {
+    const newPost: NewsPost = {
+      id: crypto.randomUUID(),
       title: formData.title,
       content: formData.content,
       imageUrl: formData.imageUrl,
-      status: 'APPROVED'
+      date: new Date().toISOString(),
+      published: true,
+      status: 'APPROVED',
     };
     addNews(newPost);
     setIsAdding(false);
@@ -36,14 +40,19 @@ function AdminNews() {
       </div>
 
       {isAdding && (
-        <form onSubmit={handleSubmit} className="mb-8 p-4 border border-gray-200 rounded-lg bg-gray-50 space-y-4">
-          <h3 className="font-bold text-gray-800">New Announcement</h3>
-          <input required placeholder="Title" className="w-full p-2 border rounded" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
-          <input placeholder="Image URL (Optional)" className="w-full p-2 border rounded" value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} />
-          <textarea required placeholder="Content" className="w-full p-2 border rounded h-24" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
+        <form onSubmit={handleSubmit} className="mb-8 p-5 border border-gray-200 rounded-xl bg-gray-50 space-y-4">
+          <h3 className="font-bold text-gray-800 text-lg">New Announcement</h3>
+          <input required placeholder="Announcement Title" className="w-full p-2.5 border rounded-lg bg-white text-sm" value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} />
+          <ImageUpload
+            label="Announcement Cover Image (Cloudflare R2)"
+            folder="posts"
+            value={formData.imageUrl}
+            onChange={url => setFormData({...formData, imageUrl: url})}
+          />
+          <textarea required placeholder="Write announcement details..." className="w-full p-2.5 border rounded-lg bg-white text-sm" rows={4} value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
           <div className="flex gap-2">
             <Button type="submit">Publish Now</Button>
-            <button type="button" onClick={() => setIsAdding(false)} className="text-gray-500 hover:underline">Cancel</button>
+            <button type="button" onClick={() => setIsAdding(false)} className="text-gray-500 hover:underline px-3 text-sm">Cancel</button>
           </div>
         </form>
       )}

@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Service } from '../features/Services/types/service';
+import { Service } from '../features/services/types/service';
 import { Staff } from '../features/staff/types/staff';
 import { Appointment } from '../features/Appointment/types/appointment';
 import { NewsPost } from '../features/News/types/news';
 import { AuthUser } from '../features/Authentication/types/auth';
+import { useAuth } from './AuthContext';
 
 import { serviceService } from '../services/service.service';
 import { staffService } from '../services/staff.service';
@@ -12,18 +13,18 @@ import { api } from '../services/api';
 
 interface DataContextType {
   services: Service[];
-  addService: (service: Service) => void;
+  addService: (service: any) => void;
   updateService: (service: Service) => void;
-  deleteService: (id: number) => void;
+  deleteService: (id: string) => void;
 
   staffList: Staff[];
-  addStaff: (staff: Staff) => void;
+  addStaff: (staff: any) => Promise<any>;
   updateStaff: (staff: Staff) => void;
-  deleteStaff: (id: number) => void;
+  deleteStaff: (id: string) => void;
 
   appointments: Appointment[];
-  addAppointment: (apt: Appointment) => void;
-  updateAppointment: (apt: Appointment) => void;
+  addAppointment: (apt: any) => Promise<any>;
+  updateAppointment: (apt: any) => Promise<any>;
   deleteAppointment: (id: string) => void;
 
   newsList: NewsPost[];
@@ -44,6 +45,7 @@ export const useData = () => {
 };
 
 export const DataProvider = ({ children }: { children: ReactNode }) => {
+  const { user, isAuthenticated } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -55,13 +57,34 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const fetchData = async () => {
       try {
         const [servicesRes, staffRes, newsRes] = await Promise.all([
-          serviceService.getServices(),
-          staffService.getStaff(),
-          api.get('/posts').then(res => res.data).catch(() => ({ data: [] }))
+          serviceService.getServices().catch(() => ({ success: false, data: [] })),
+          staffService.getStaff().catch(() => ({ success: false, data: [] })),
+          api.get('/posts').then(res => res.data).catch(() => ({ success: false, data: [] }))
         ]);
-        if (servicesRes.success) setServices(servicesRes.data.data || servicesRes.data);
-        if (staffRes.success) setStaffList(staffRes.data.data || staffRes.data);
-        if (newsRes.success) setNewsList(newsRes.data.data || newsRes.data);
+        if (servicesRes.success) {
+          const rawServices = Array.isArray(servicesRes.data?.data)
+            ? servicesRes.data.data
+            : Array.isArray(servicesRes.data)
+            ? servicesRes.data
+            : [];
+          setServices(rawServices);
+        }
+        if (staffRes.success) {
+          const rawStaff = Array.isArray(staffRes.data?.data)
+            ? staffRes.data.data
+            : Array.isArray(staffRes.data)
+            ? staffRes.data
+            : [];
+          setStaffList(rawStaff);
+        }
+        if (newsRes.success) {
+          const rawNews = Array.isArray(newsRes.data?.data)
+            ? newsRes.data.data
+            : Array.isArray(newsRes.data)
+            ? newsRes.data
+            : [];
+          setNewsList(rawNews);
+        }
       } catch (error) {
         console.error("Failed to fetch initial data", error);
       }
@@ -69,29 +92,118 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     fetchData();
   }, []);
 
+  // Fetch appointments for admin users
+  React.useEffect(() => {
+    const fetchAppointments = async () => {
+      if (isAuthenticated && user?.role === 'ADMIN') {
+        try {
+          const res = await api.get('/appointments');
+          if (res.data.success) {
+            const rawApts = Array.isArray(res.data.data?.data)
+              ? res.data.data.data
+              : Array.isArray(res.data.data)
+              ? res.data.data
+              : [];
+            const mappedApts = rawApts.map((apt: any) => ({
+              id: apt.id,
+              customerName: apt.customerName || (apt.user ? `${apt.user.firstName || ''} ${apt.user.lastName || ''}`.trim() : 'Customer'),
+              customerPhone: apt.customerPhone || 'No Phone',
+              serviceName: apt.service?.name || 'Service',
+              staffName: apt.staff?.user ? `${apt.staff.user.firstName || ''} ${apt.staff.user.lastName || ''}`.trim() : 'Stylist',
+              date: apt.date,
+              time: apt.startTime || apt.time || '',
+              status: apt.status,
+            }));
+            setAppointments(mappedApts);
+          }
+        } catch (error) {
+          console.error("Failed to fetch appointments", error);
+        }
+      }
+    };
+    fetchAppointments();
+  }, [isAuthenticated, user]);
+
   const addService = async (service: any) => {
     try {
       const res = await serviceService.createService(service);
-      if (res.success) setServices([...services, res.data]);
-    } catch(e) { console.error(e); }
+      if (res.success && res.data) {
+        const created = res.data;
+        setServices(prev => [...(Array.isArray(prev) ? prev : []), created]);
+        return created;
+      }
+    } catch(e) {
+      console.error("addService error:", e);
+      throw e;
+    }
   };
-  const updateService = (service: Service) => setServices(services.map(s => s.id === service.id ? service : s));
-  const deleteService = (id: number) => setServices(services.filter(s => s.id !== id));
+  const updateService = async (service: Service) => {
+    try {
+      const res = await serviceService.updateService(String(service.id), service);
+      if (res.success && res.data) {
+        const updated = res.data;
+        setServices(prev => (Array.isArray(prev) ? prev : []).map(s => String(s.id) === String(service.id) ? updated : s));
+        return updated;
+      }
+    } catch(e) {
+      console.error("updateService error:", e);
+      throw e;
+    }
+  };
+  const deleteService = async (id: string) => {
+    try {
+      const res = await serviceService.deleteService(id);
+      if (res.success) {
+        setServices(prev => (Array.isArray(prev) ? prev : []).filter(s => String(s.id) !== String(id)));
+        return res;
+      }
+    } catch(e) {
+      console.error("deleteService error:", e);
+      throw e;
+    }
+  };
 
   const addStaff = async (staff: any) => {
+    const res = await staffService.createStaff(staff);
+    if (res.success && res.data) {
+      setStaffList(prev => [...(Array.isArray(prev) ? prev : []), res.data]);
+    }
+    return res;
+  };
+  const updateStaff = async (staff: Staff) => {
     try {
-      const res = await staffService.createStaff(staff);
-      if (res.success) setStaffList([...staffList, res.data]);
+      const res = await api.patch(`/staff/${staff.id}`, staff);
+      if (res.data.success && res.data.data) {
+        setStaffList(prev => (Array.isArray(prev) ? prev : []).map(s => s.id === staff.id ? res.data.data : s));
+      }
     } catch(e) { console.error(e); }
   };
-  const updateStaff = (staff: Staff) => setStaffList(staffList.map(s => s.id === staff.id ? staff : s));
-  const deleteStaff = (id: number) => setStaffList(staffList.filter(s => s.id !== id));
+  const deleteStaff = async (id: string) => {
+    try {
+      const res = await api.delete(`/users/${id}`);
+      if (res.data.success) {
+        setStaffList(prev => (Array.isArray(prev) ? prev : []).filter(s => s.id !== id));
+      }
+    } catch(e) { console.error(e); }
+  };
 
-  const addAppointment = async (apt: Appointment) => {
+  const addAppointment = async (apt: any) => {
     try {
       const res = await appointmentService.bookAppointment(apt);
-      if (res.success) {
-        setAppointments([...appointments, res.data]);
+      if (res.success && res.data) {
+        const rawApt = res.data;
+        const mappedApt = {
+          id: rawApt.id,
+          customerName: rawApt.customerName || (rawApt.user ? `${rawApt.user.firstName || ''} ${rawApt.user.lastName || ''}`.trim() : 'Customer'),
+          customerPhone: rawApt.customerPhone || 'No Phone',
+          serviceName: rawApt.service?.name || 'Service',
+          staffName: rawApt.staff?.user ? `${rawApt.staff.user.firstName || ''} ${rawApt.staff.user.lastName || ''}`.trim() : 'Stylist',
+          date: rawApt.date,
+          time: rawApt.startTime || rawApt.time || '',
+          status: rawApt.status,
+        };
+        setAppointments(prev => [...(Array.isArray(prev) ? prev : []), mappedApt]);
+        return res;
       }
     } catch (e) {
       console.error(e);
@@ -99,28 +211,48 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateAppointment = async (apt: Appointment) => {
+  const updateAppointment = async (apt: any) => {
     try {
-      const res = await appointmentService.updateAppointmentStatus(apt.id, apt.status);
-      if (res.success) {
-        setAppointments(appointments.map(a => a.id === apt.id ? res.data : a));
+      let backendStatus = apt.status;
+      if (backendStatus === 'Completed') backendStatus = 'COMPLETED';
+      else if (backendStatus === 'Cancelled') backendStatus = 'CANCELLED';
+      else if (backendStatus === 'Upcoming') backendStatus = 'PENDING';
+
+      const res = await appointmentService.updateAppointmentStatus(apt.id, backendStatus);
+      if (res.success && res.data) {
+        const rawApt = res.data;
+        const mappedApt = {
+          id: rawApt.id,
+          customerName: rawApt.customerName || (rawApt.user ? `${rawApt.user.firstName || ''} ${rawApt.user.lastName || ''}`.trim() : 'Customer'),
+          customerPhone: rawApt.customerPhone || 'No Phone',
+          serviceName: rawApt.service?.name || 'Service',
+          staffName: rawApt.staff?.user ? `${rawApt.staff.user.firstName || ''} ${rawApt.staff.user.lastName || ''}`.trim() : 'Stylist',
+          date: rawApt.date,
+          time: rawApt.startTime || rawApt.time || '',
+          status: rawApt.status,
+        };
+        setAppointments(prev => (Array.isArray(prev) ? prev : []).map(a => a.id === apt.id ? mappedApt : a));
+        return res;
       }
     } catch (e) {
       console.error(e);
+      throw e;
     }
   };
-  const deleteAppointment = (id: string) => setAppointments(appointments.filter(a => a.id !== id));
+  const deleteAppointment = (id: string) => setAppointments(prev => (Array.isArray(prev) ? prev : []).filter(a => a.id !== id));
 
   const addNews = async (news: any) => {
     try {
       const res = await api.post('/posts', news);
-      if (res.data.success) setNewsList([...newsList, res.data.data]);
+      if (res.data.success && res.data.data) {
+        setNewsList(prev => [...(Array.isArray(prev) ? prev : []), res.data.data]);
+      }
     } catch(e) { console.error(e); }
   };
-  const updateNews = (news: NewsPost) => setNewsList(newsList.map(n => n.id === news.id ? news : n));
-  const deleteNews = (id: string) => setNewsList(newsList.filter(n => n.id !== id));
+  const updateNews = (news: NewsPost) => setNewsList(prev => (Array.isArray(prev) ? prev : []).map(n => n.id === news.id ? news : n));
+  const deleteNews = (id: string) => setNewsList(prev => (Array.isArray(prev) ? prev : []).filter(n => n.id !== id));
 
-  const updateUser = (user: AuthUser) => setUsersList(usersList.map(u => u.id === user.id ? user : u));
+  const updateUser = (user: AuthUser) => setUsersList(prev => (Array.isArray(prev) ? prev : []).map(u => u.id === user.id ? user : u));
 
   return (
     <DataContext.Provider value={{

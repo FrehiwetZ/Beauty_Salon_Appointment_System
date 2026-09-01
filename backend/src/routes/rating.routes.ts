@@ -14,4 +14,8 @@ router.get('/service/:serviceId', ratingController.getServiceRatings);
 // Protected route to create ratings
 router.post('/', authMiddleware, authorizeRoles('USER'), validateRequest(createRatingSchema), ratingController.createRating);
 
+// Admin routes for review moderation
+router.get('/', authMiddleware, authorizeRoles('ADMIN'), ratingController.getAllRatings);
+router.delete('/:id', authMiddleware, authorizeRoles('ADMIN'), ratingController.deleteRating);
+
 export default router;

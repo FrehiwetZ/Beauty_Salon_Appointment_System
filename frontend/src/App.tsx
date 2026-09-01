@@ -2,20 +2,21 @@ import React, { useEffect } from "react";
 import { useNavigation } from "./context/NavigationContext";
 import { useAuth } from "./context/AuthContext";
 
-import ServicesPage from "./features/Services/pages/ServicesPage";
+import LandingPage from "./features/Landing/pages/LandingPage";
+import ServicesPage from "./features/services/pages/ServicesPage";
 import StaffPage from "./features/staff/pages/StaffPage";
 import DashboardPage from "./features/Dashboard/pages/DashboardPage";
 import ProfilePage from "./features/Profile/pages/ProfilePage";
 import AppointmentsPage from "./features/Appointment/pages/AppointmentsPage";
 import LoginPage from "./features/Authentication/pages/LoginPage";
 import RegisterPage from "./features/Authentication/pages/RegisterPage";
-import AdminPage from "./features/Admin/pages/AdminPage";
+import AdminPage from "./features/admin/pages/AdminPage";
 import IntegrationPage from "./features/Integration/pages/IntegrationPage";
 import StaffDashboardPage from "./features/staff/pages/StaffDashboardPage";
 
 const AppContent = () => {
   const { page, setPage } = useNavigation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   // Route protection
   useEffect(() => {
@@ -48,7 +49,8 @@ const AppContent = () => {
   // Normal User / Public Routes
   return (
     <div>
-      {page === "dashboard" && <DashboardPage />}
+      {page === "landing" && <LandingPage />}
+      {page === "dashboard" && (isAuthenticated ? <DashboardPage /> : <LandingPage />)}
       {page === "services" && <ServicesPage />}
       {page === "staff" && <StaffPage />}
       {page === "appointments" && <AppointmentsPage />}

@@ -44,6 +44,7 @@ export const createPost = async (authorId: string, data: any) => {
     data: {
       ...data,
       authorId,
+      status: 'APPROVED',
     },
   });
 };

@@ -4,4 +4,6 @@ export interface NewsPost {
   content: string;
   date: string;
   published: boolean;
+  imageUrl?: string;
+  status?: string;
 }

@@ -67,16 +67,25 @@ function DashboardPage() {
 
         {publishedNews.length > 0 && (
           <div className="mb-10 space-y-4">
-            <h2 className="text-xl font-bold text-gray-800">Latest Announcements</h2>
-            {publishedNews.map(news => (
-              <div key={news.id} className="bg-pink-100 border-l-4 border-pink-500 p-5 rounded-r shadow-sm">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-pink-800 text-lg">{news.title}</h3>
-                  <span className="text-sm text-pink-600 font-medium">{news.date}</span>
+            <h2 className="text-xl font-bold text-gray-800">Latest Staff Posts & Announcements</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {publishedNews.map(news => (
+                <div key={news.id} className="bg-white border border-pink-100 rounded-lg shadow-sm overflow-hidden flex flex-col">
+                  {news.imageUrl && (
+                    <img src={news.imageUrl} alt={news.title} className="w-full h-48 object-cover" />
+                  )}
+                  <div className="p-5 flex flex-col flex-grow">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-pink-800 text-lg line-clamp-2">{news.title}</h3>
+                    </div>
+                    <p className="text-sm text-gray-500 mb-3">
+                      By {news.author?.firstName} {news.author?.lastName} • {new Date(news.createdAt || Date.now()).toLocaleDateString()}
+                    </p>
+                    <p className="text-gray-700 text-sm line-clamp-3">{news.content}</p>
+                  </div>
                 </div>
-                <p className="text-pink-700 mt-2">{news.content}</p>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 

@@ -7,6 +7,154 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  username      String         @unique
+  password      String
+  firstName     String?
+  lastName      String?
+  role          Role           @default(USER)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  appointments  Appointment[]
+  notifications Notification[]
+  posts         Post[]
+  ratings       Rating[]
+  staffProfile  StaffProfile?
+}
+
+model StaffProfile {
+  id             String          @id @default(uuid())
+  userId         String          @unique
+  bio            String?
+  position       String?
+  imageUrl       String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  appointments   Appointment[]
+  blockedPeriods BlockedPeriod[]
+  ratings        Rating[]
+  user           User            @relation(fields: [userId], references: [id])
+  services       StaffService[]
+  workingHours   WorkingHour[]
+}
+
+model Service {
+  id              String         @id @default(uuid())
+  name            String
+  description     String?
+  durationMinutes Int
+  price           Float
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  imageUrl        String?
+  bufferAfter     Int            @default(0)
+  bufferBefore    Int            @default(0)
+  category        String?
+  appointments    Appointment[]
+  ratings         Rating[]
+  staff           StaffService[]
+}
+
+model StaffService {
+  staffId   String
+  serviceId String
+  service   Service      @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  staff     StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([staffId, serviceId])
+}
+
+model WorkingHour {
+  id        String       @id @default(uuid())
+  staffId   String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isDayOff  Boolean      @default(false)
+  staff     StaffProfile @relation(fields: [staffId], references: [id])
+
+  @@unique([staffId, dayOfWeek])
+}
+
+model BlockedPeriod {
+  id        String       @id @default(uuid())
+  staffId   String
+  date      String
+  startTime String?
+  endTime   String?
+  reason    String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  staff     StaffProfile @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+model Appointment {
+  id                 String            @id @default(uuid())
+  userId             String
+  staffId            String
+  serviceId          String
+  date               String
+  startTime          String
+  endTime            String
+  status             AppointmentStatus @default(PENDING)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  cancellationReason String?
+  cancelledAt        DateTime?
+  customerName       String            @default("")
+  customerPhone      String            @default("")
+  notes              String?
+  rescheduledAt      DateTime?
+  rescheduledFromId  String?
+  service            Service           @relation(fields: [serviceId], references: [id])
+  staff              StaffProfile      @relation(fields: [staffId], references: [id])
+  user               User              @relation(fields: [userId], references: [id])
+  rating             Rating?
+}
+
+model Rating {
+  id            String       @id @default(uuid())
+  userId        String
+  staffId       String
+  serviceId     String
+  appointmentId String       @unique
+  score         Int
+  comment       String?
+  createdAt     DateTime     @default(now())
+  satisfaction  String?
+  appointment   Appointment  @relation(fields: [appointmentId], references: [id])
+  service       Service      @relation(fields: [serviceId], references: [id])
+  staff         StaffProfile @relation(fields: [staffId], references: [id])
+  user          User         @relation(fields: [userId], references: [id])
+}
+
+model Post {
+  id        String     @id @default(uuid())
+  authorId  String
+  title     String
+  content   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  imageUrl  String?
+  status    PostStatus @default(PENDING)
+  author    User       @relation(fields: [authorId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
 enum Role {
   USER
   STAFF
@@ -18,138 +166,13 @@ enum AppointmentStatus {
   CONFIRMED
   CANCELLED
   COMPLETED
+  IN_PROGRESS
+  NO_SHOW
+  REJECTED
 }
 
 enum PostStatus {
   PENDING
   APPROVED
   REJECTED
-}
-
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  username  String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  role      Role     @default(USER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  staffProfile  StaffProfile?
-  appointments  Appointment[]
-  ratings       Rating[]
-  posts         Post[]
-  notifications Notification[]
-}
-
-model StaffProfile {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  bio       String?
-  position  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  workingHours WorkingHour[]
-  appointments Appointment[]
-  ratings      Rating[]
-  services     StaffService[]
-}
-
-model Service {
-  id              String   @id @default(uuid())
-  name            String
-  description     String?
-  durationMinutes Int
-  price           Float
-  imageUrl        String?
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  appointments Appointment[]
-  ratings      Rating[]
-  staff        StaffService[]
-}
-
-// Many-to-Many relationship between Staff and Services
-model StaffService {
-  staffId   String
-  serviceId String
-  staff     StaffProfile @relation(fields: [staffId], references: [id])
-  service   Service      @relation(fields: [serviceId], references: [id])
-
-  @@id([staffId, serviceId])
-}
-
-model WorkingHour {
-  id        String       @id @default(uuid())
-  staffId   String
-  staff     StaffProfile @relation(fields: [staffId], references: [id])
-  dayOfWeek Int // 0 = Sunday, 1 = Monday, ... 6 = Saturday
-  startTime String // e.g., "09:00"
-  endTime   String // e.g., "17:00"
-  isDayOff  Boolean      @default(false)
-
-  @@unique([staffId, dayOfWeek])
-}
-
-model Appointment {
-  id        String            @id @default(uuid())
-  userId    String
-  user      User              @relation(fields: [userId], references: [id])
-  staffId   String
-  staff     StaffProfile      @relation(fields: [staffId], references: [id])
-  serviceId String
-  service   Service           @relation(fields: [serviceId], references: [id])
-  date      String // YYYY-MM-DD
-  startTime String // "HH:mm"
-  endTime   String // "HH:mm"
-  status    AppointmentStatus @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-
-  rating Rating?
-}
-
-model Rating {
-  id            String       @id @default(uuid())
-  userId        String
-  user          User         @relation(fields: [userId], references: [id])
-  staffId       String
-  staff         StaffProfile @relation(fields: [staffId], references: [id])
-  serviceId     String
-  service       Service      @relation(fields: [serviceId], references: [id])
-  appointmentId String       @unique
-  appointment   Appointment  @relation(fields: [appointmentId], references: [id])
-  score         Int // 1 to 5
-  comment       String?
-  createdAt     DateTime     @default(now())
-}
-
-model Post {
-  id          String   @id @default(uuid())
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id])
-  title       String
-  content     String
-  imageUrl    String?
-  status      PostStatus @default(PENDING)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-}
-
-model Notification {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  title     String
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
 }

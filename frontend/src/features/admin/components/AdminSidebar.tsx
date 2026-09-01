@@ -11,6 +11,7 @@ function AdminSidebar({ activeTab, setActiveTab }: Props) {
   
   const tabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'landing', label: '🎨 Landing Page CMS' },
     { id: 'users', label: 'Manage Users' },
     { id: 'staff', label: 'Manage Staff' },
     { id: 'services', label: 'Manage Services' },

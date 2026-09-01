@@ -1,5 +1,3 @@
-import React from "react";
-
 interface StaffSearchProps {
   search: string;
   setSearch: (value: string) => void;

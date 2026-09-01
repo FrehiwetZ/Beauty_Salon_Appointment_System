@@ -38,10 +38,10 @@ export function Button({
       type={type}
       disabled={disabled}
       className={`
-        rounded-lg font-medium transition
+        rounded-lg font-medium transition-all duration-150 select-none
         ${styles[variant]}
         ${sizes[size]}
-        ${disabled ? "opacity-50 cursor-not-allowed" : ""}
+        ${disabled ? "opacity-50 cursor-not-allowed" : "active:scale-[0.98] shadow-sm hover:shadow active:shadow-inner cursor-pointer"}
         ${className}
       `.trim()}
       {...props}

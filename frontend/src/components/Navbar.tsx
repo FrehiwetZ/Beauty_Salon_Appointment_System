@@ -7,17 +7,19 @@ function Navbar() {
   const { setPage } = useNavigation();
   const { isAuthenticated, user, logout } = useAuth();
 
-  // Base navigation for normal users
-  const navItems = [
-    { id: 'dashboard', label: 'Home' },
+  // Navigation for guests vs authenticated users
+  const navItems = !isAuthenticated ? [
+    { id: 'landing', label: 'Home' },
+    { id: 'services', label: 'Services' },
+    { id: 'staff', label: 'Stylists' },
+  ] : [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'landing', label: 'Studio Showcase' },
     { id: 'services', label: 'Services' },
     { id: 'staff', label: 'Staff' },
     { id: 'appointments', label: 'Appointments' },
+    { id: 'profile', label: 'Profile' },
   ];
-
-  if (isAuthenticated && user?.role === 'USER') {
-    navItems.push({ id: 'profile', label: 'Profile' });
-  }
 
   const handleNav = (id: string) => {
     setPage(id);
@@ -29,10 +31,6 @@ function Navbar() {
     setOpen(false);
   };
 
-  // If the user is an admin, they should ideally be in the Admin Dashboard which has its own sidebar.
-  // But if they somehow see the Navbar, we shouldn't show them standard user navigation.
-  // The requirement says: "Admin should NOT simply appear as: Home | Services | Stuff | Appointments | Admin"
-  // And: "The admin dashboard should be clearly different from the normal customer dashboard."
   if (user?.role === 'ADMIN') {
     return (
       <nav className="bg-white shadow-md px-6 py-4 flex justify-between items-center relative z-50">
@@ -47,7 +45,7 @@ function Navbar() {
       
       <h1 
         className="text-2xl font-bold text-pink-600 cursor-pointer"
-        onClick={() => setPage('dashboard')}
+        onClick={() => setPage(isAuthenticated ? 'dashboard' : 'landing')}
       >
         BeautyCare
       </h1>

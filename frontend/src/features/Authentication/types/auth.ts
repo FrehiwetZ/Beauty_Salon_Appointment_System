@@ -2,7 +2,9 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
-  role: 'USER' | 'ADMIN';
+  firstName?: string;
+  lastName?: string;
+  role: 'USER' | 'ADMIN' | 'STAFF';
 }
 
 export interface AuthState {

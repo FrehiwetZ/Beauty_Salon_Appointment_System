@@ -33,3 +33,22 @@ export const getServiceRatings = async (req: Request, res: Response, next: NextF
     next(error);
   }
 };
+
+export const getAllRatings = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const ratings = await ratingService.getAllRatings();
+    return sendSuccess(res, 200, 'All ratings retrieved successfully', ratings);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteRating = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await ratingService.deleteRating(req.params.id as string);
+    return sendSuccess(res, 200, 'Rating deleted successfully');
+  } catch (error: any) {
+    if (error.message === 'Rating not found') return sendError(res, 404, error.message);
+    next(error);
+  }
+};

@@ -44,3 +44,13 @@ export const updateService = async (req: Request, res: Response, next: NextFunct
     next(error);
   }
 };
+
+export const deleteService = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await serviceService.deleteService((req.params.id as string));
+    return sendSuccess(res, 200, 'Service deleted successfully');
+  } catch (error: any) {
+    if (error.message === 'Service not found') return sendError(res, 404, error.message);
+    next(error);
+  }
+};

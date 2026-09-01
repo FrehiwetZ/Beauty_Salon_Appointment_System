@@ -2,7 +2,7 @@ import { Staff } from "../types/staff";
 
 export const staff: Staff[] = [
   {
-    id: 1,
+    id: "1",
     name: "Hanna Tesfaye",
     role: "Hair Stylist",
     specialty: "Hair Braiding",
@@ -11,7 +11,7 @@ export const staff: Staff[] = [
     image: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f",
   },
   {
-    id: 2,
+    id: "2",
     name: "Meron Bekele",
     role: "Makeup Artist",
     specialty: "Bridal Makeup",
@@ -20,7 +20,7 @@ export const staff: Staff[] = [
     image: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f",
   },
   {
-    id: 3,
+    id: "3",
     name: "Selamawit Alemu",
     role: "Nail Artist",
     specialty: "Manicure & Pedicure",
@@ -29,7 +29,7 @@ export const staff: Staff[] = [
     image: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1",
   },
   {
-    id: 4,
+    id: "4",
     name: "Rahel Girma",
     role: "Hair Stylist",
     specialty: "Hair Styling",
@@ -38,7 +38,7 @@ export const staff: Staff[] = [
     image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
   },
   {
-    id: 5,
+    id: "5",
     name: "Betty Worku",
     role: "Beauty Specialist",
     specialty: "Facial Treatment",
@@ -47,7 +47,7 @@ export const staff: Staff[] = [
     image: "https://images.unsplash.com/photo-1595959183082-7bce6b3b8e8b",
   },
   {
-    id: 6,
+    id: "6",
     name: "Liya Abebe",
     role: "Makeup Artist",
     specialty: "Party Makeup",

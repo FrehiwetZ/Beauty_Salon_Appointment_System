@@ -14,5 +14,14 @@ export const appointmentService = {
   updateAppointmentStatus: async (id: string, status: string) => {
     const response = await api.patch(`/appointments/${id}/status`, { status });
     return response.data;
+  },
+
+  getAvailability: async (serviceId: string, date: string, staffId?: string) => {
+    const params: any = { serviceId, date };
+    if (staffId && staffId !== 'any') {
+      params.staffId = staffId;
+    }
+    const response = await api.get('/appointments/availability', { params });
+    return response.data;
   }
 };

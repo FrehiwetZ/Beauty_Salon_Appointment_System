@@ -19,5 +19,10 @@ export const serviceService = {
   updateService: async (id: string, data: any) => {
     const response = await api.patch(`/services/${id}`, data);
     return response.data;
+  },
+  
+  deleteService: async (id: string) => {
+    const response = await api.delete(`/services/${id}`);
+    return response.data;
   }
 };
