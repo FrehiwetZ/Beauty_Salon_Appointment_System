@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cmd /c npx tsx src/repro-create-staff\\.ts$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cmd /c \"npx tsc --noEmit & echo EXIT=%ERRORLEVEL%\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

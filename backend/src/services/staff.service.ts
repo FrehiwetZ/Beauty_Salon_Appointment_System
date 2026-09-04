@@ -2,17 +2,44 @@ import { prisma } from '../config/database';
 import { hashPassword } from '../utils/password';
 import { Role } from '@prisma/client';
 
-export const getAllStaff = async (page: number, limit: number, search?: string) => {
-  const skip = (page - 1) * limit;
+/**
+ * Get all staff
+ */
+export const getAllStaff = async (
+  page: number = 1,
+  limit: number = 10,
+  search?: string
+) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safeLimit = Math.max(1, Number(limit) || 10);
+  const skip = (safePage - 1) * safeLimit;
 
   const whereClause: any = {
     role: Role.STAFF,
   };
 
-  if (search) {
+  if (search && search.trim()) {
+    const searchValue = search.trim();
+
     whereClause.OR = [
-      { firstName: { contains: search, mode: 'insensitive' } },
-      { lastName: { contains: search, mode: 'insensitive' } },
+      {
+        firstName: {
+          contains: searchValue,
+          mode: 'insensitive',
+        },
+      },
+      {
+        lastName: {
+          contains: searchValue,
+          mode: 'insensitive',
+        },
+      },
+      {
+        email: {
+          contains: searchValue,
+          mode: 'insensitive',
+        },
+      },
     ];
   }
 
@@ -22,182 +49,578 @@ export const getAllStaff = async (page: number, limit: number, search?: string) 
       select: {
         id: true,
         email: true,
+        username: true,
         firstName: true,
         lastName: true,
         isActive: true,
+
         staffProfile: {
           include: {
-            services: { include: { service: true } },
+            services: {
+              include: {
+                service: true,
+              },
+            },
+
             workingHours: true,
-            ratings: { select: { score: true } },
+
+            ratings: {
+              select: {
+                score: true,
+              },
+            },
           },
         },
       },
+
       skip,
-      take: limit,
+      take: safeLimit,
+
+      orderBy: {
+        firstName: 'asc',
+      },
     }),
-    prisma.user.count({ where: whereClause }),
+
+    prisma.user.count({
+      where: whereClause,
+    }),
   ]);
 
-  // Calculate average rating
   const formattedStaff = (Array.isArray(staff) ? staff : []).map((s) => {
-    let avgRating = 0;
-    const ratings = Array.isArray(s.staffProfile?.ratings) ? s.staffProfile.ratings : [];
+    const ratings = Array.isArray(s.staffProfile?.ratings)
+      ? s.staffProfile.ratings
+      : [];
+
+    let averageRating = 0;
+
     if (ratings.length > 0) {
-      const sum = ratings.reduce((acc, r) => acc + r.score, 0);
-      avgRating = sum / ratings.length;
+      const sum = ratings.reduce(
+        (acc: number, rating: any) => acc + Number(rating.score || 0),
+        0
+      );
+
+      averageRating = sum / ratings.length;
     }
+
     return {
       ...s,
+
       imageUrl: (s.staffProfile as any)?.imageUrl || null,
       image: (s.staffProfile as any)?.imageUrl || null,
-      averageRating: avgRating,
+
+      averageRating,
     };
   });
 
   return {
     data: formattedStaff,
+
     pagination: {
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       total: total || 0,
-      totalPages: Math.ceil((total || 0) / limit),
+      totalPages: Math.ceil((total || 0) / safeLimit),
     },
   };
 };
 
+/**
+ * Get one staff member
+ */
 export const getStaffById = async (id: string) => {
   const staff = await prisma.user.findFirst({
-    where: { id, role: Role.STAFF },
+    where: {
+      id,
+      role: Role.STAFF,
+    },
+
     select: {
       id: true,
       email: true,
+      username: true,
       firstName: true,
       lastName: true,
       isActive: true,
+
       staffProfile: {
         include: {
-          services: { include: { service: true } },
+          services: {
+            include: {
+              service: true,
+            },
+          },
+
           workingHours: true,
-          ratings: { include: { user: { select: { firstName: true, lastName: true } } } },
+
+          ratings: {
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
         },
       },
     },
   });
 
-  if (!staff) throw new Error('Staff not found');
+  if (!staff) {
+    throw new Error('Staff not found');
+  }
+
   return {
     ...staff,
+
     imageUrl: (staff.staffProfile as any)?.imageUrl || null,
     image: (staff.staffProfile as any)?.imageUrl || null,
   };
 };
 
+/**
+ * CREATE STAFF
+ *
+ * Expected data:
+ *
+ * {
+ *   email: "john@example.com",
+ *   username: "john",
+ *   password: "123456",
+ *   firstName: "John",
+ *   lastName: "Doe",
+ *   bio: "...",
+ *   position: "Barber",
+ *   imageUrl: "...",
+ *   serviceIds: ["service-id-1", "service-id-2"]
+ * }
+ */
 export const createStaff = async (data: any) => {
-  const existingUser = await prisma.user.findFirst({
-    where: { OR: [{ email: data.email }, { username: data.username }] },
-  });
+  console.log('========== CREATE STAFF ==========');
+  console.log('Received data:', data);
 
-  if (existingUser) {
-    throw new Error('Email or username already in use');
+  // -----------------------------
+  // Validate required fields
+  // -----------------------------
+
+  const email = String(data?.email || '').trim().toLowerCase();
+  const username = String(data?.username || '').trim();
+  const password = String(data?.password || '');
+  const firstName = String(data?.firstName || '').trim();
+  const lastName = String(data?.lastName || '').trim();
+
+  if (!email) {
+    throw new Error('Email is required');
   }
 
-  const hashedPassword = await hashPassword(data.password);
-  const serviceIds: string[] = Array.isArray(data.serviceIds) ? data.serviceIds : [];
+  if (!username) {
+    throw new Error('Username is required');
+  }
 
-  const newStaff = await prisma.$transaction(async (tx) => {
-    return tx.user.create({
-      data: {
-        email: data.email,
-        username: data.username,
-        password: hashedPassword,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: Role.STAFF,
-        staffProfile: {
-          create: {
-            bio: data.bio,
-            position: data.position,
-            imageUrl: data.imageUrl || null,
-            services: {
-              create: serviceIds.map((serviceId: string) => ({
-                serviceId,
-              })),
-            },
-            // Auto-create default working hours: Mon-Fri 09:00-17:00, Sat-Sun off
-            workingHours: {
-              create: [
-                { dayOfWeek: 0, startTime: '09:00', endTime: '17:00', isDayOff: true },  // Sunday
-                { dayOfWeek: 1, startTime: '09:00', endTime: '17:00', isDayOff: false }, // Monday
-                { dayOfWeek: 2, startTime: '09:00', endTime: '17:00', isDayOff: false }, // Tuesday
-                { dayOfWeek: 3, startTime: '09:00', endTime: '17:00', isDayOff: false }, // Wednesday
-                { dayOfWeek: 4, startTime: '09:00', endTime: '17:00', isDayOff: false }, // Thursday
-                { dayOfWeek: 5, startTime: '09:00', endTime: '17:00', isDayOff: false }, // Friday
-                { dayOfWeek: 6, startTime: '09:00', endTime: '17:00', isDayOff: true },  // Saturday
-              ],
-            },
-          },
-        },
-      },
-      include: {
-        staffProfile: {
-          include: {
-            services: { include: { service: true } },
-            workingHours: true,
-            ratings: { select: { score: true } },
-          },
-        },
-      },
-    });
+  if (!password) {
+    throw new Error('Password is required');
+  }
+
+  if (password.length < 6) {
+    throw new Error('Password must be at least 6 characters');
+  }
+
+  if (!firstName) {
+    throw new Error('First name is required');
+  }
+
+  if (!lastName) {
+    throw new Error('Last name is required');
+  }
+
+  // -----------------------------
+  // Check existing email
+  // -----------------------------
+
+  const existingEmail = await prisma.user.findFirst({
+    where: {
+      email,
+    },
   });
 
-  const { password, ...staffWithoutPassword } = newStaff;
-  return {
-    ...staffWithoutPassword,
-    imageUrl: (staffWithoutPassword.staffProfile as any)?.imageUrl || null,
-    image: (staffWithoutPassword.staffProfile as any)?.imageUrl || null,
-    averageRating: 0,
+  if (existingEmail) {
+    throw new Error('Email already in use');
+  }
+
+  // -----------------------------
+  // Check existing username
+  // -----------------------------
+
+  const existingUsername = await prisma.user.findFirst({
+    where: {
+      username,
+    },
+  });
+
+  if (existingUsername) {
+    throw new Error('Username already in use');
+  }
+
+  // -----------------------------
+  // Prepare services
+  // -----------------------------
+
+  const serviceIds: string[] = Array.isArray(data?.serviceIds)
+    ? data.serviceIds
+      .filter((id: any) => typeof id === 'string')
+      .map((id: string) => id.trim())
+      .filter(Boolean)
+    : [];
+
+  console.log('Service IDs:', serviceIds);
+
+  // -----------------------------
+  // Make sure services exist
+  // -----------------------------
+
+  if (serviceIds.length > 0) {
+    const services = await prisma.service.findMany({
+      where: {
+        id: {
+          in: serviceIds,
+        },
+      },
+
+      select: {
+        id: true,
+      },
+    });
+
+    const existingServiceIds = services.map((service) => service.id);
+
+    const invalidServiceIds = serviceIds.filter(
+      (id) => !existingServiceIds.includes(id)
+    );
+
+    if (invalidServiceIds.length > 0) {
+      throw new Error(
+        `Invalid service ID(s): ${invalidServiceIds.join(', ')}`
+      );
+    }
+  }
+
+  // -----------------------------
+  // Hash password
+  // -----------------------------
+
+  const hashedPassword = await hashPassword(password);
+
+  // -----------------------------
+  // -----------------------------
+  // Create staff (atomic writes only)
+  // -----------------------------
+
+  const createdUserId = await prisma.$transaction(
+    async (tx) => {
+      console.log('Creating user...');
+
+      // 1. Create USER
+      const createdUser = await tx.user.create({
+        data: {
+          email,
+          username,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          role: Role.STAFF,
+          isActive:
+            typeof data?.isActive === 'boolean'
+              ? data.isActive
+              : true,
+        },
+      });
+
+      console.log('User created:', createdUser.id);
+
+      // 2. Create STAFF PROFILE
+      const staffProfile = await tx.staffProfile.create({
+        data: {
+          userId: createdUser.id,
+
+          bio:
+            data?.bio !== undefined
+              ? String(data.bio)
+              : null,
+
+          position:
+            data?.position !== undefined
+              ? String(data.position)
+              : null,
+
+          imageUrl:
+            data?.imageUrl
+              ? String(data.imageUrl)
+              : null,
+        },
+      });
+
+      console.log('Staff profile created:', staffProfile.id);
+
+      // 3. Assign services
+      if (serviceIds.length > 0) {
+        await tx.staffService.createMany({
+          data: serviceIds.map((serviceId) => ({
+            staffId: staffProfile.id,
+            serviceId,
+          })),
+          skipDuplicates: true,
+        });
+
+        console.log('Services assigned');
+      }
+
+      // 4. Create working hours
+      await tx.workingHour.createMany({
+        data: [
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 0,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: true,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 1,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: false,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 2,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: false,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 3,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: false,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 4,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: false,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 5,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: false,
+          },
+          {
+            staffId: staffProfile.id,
+            dayOfWeek: 6,
+            startTime: '09:00',
+            endTime: '17:00',
+            isDayOff: true,
+          },
+        ],
+      });
+
+      console.log('Working hours created');
+
+      return createdUser.id;
+    },
+    {
+      maxWait: 5000,
+      timeout: 15000,
+    }
+  );
+
+  // -----------------------------
+  // 5. Fetch complete staff outside transaction
+  // -----------------------------
+  const newStaff = await prisma.user.findUnique({
+    where: {
+      id: createdUserId,
+    },
+
+    select: {
+      id: true,
+      email: true,
+      username: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+
+      staffProfile: {
+        include: {
+          services: {
+            include: {
+              service: true,
+            },
+          },
+
+          workingHours: true,
+
+          ratings: {
+            select: {
+              score: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!newStaff) {
+    throw new Error('Failed to create staff');
+  }
+
+  const ratings = Array.isArray(newStaff.staffProfile?.ratings)
+    ? newStaff.staffProfile.ratings
+    : [];
+
+  let averageRating = 0;
+
+  if (ratings.length > 0) {
+    const sum = ratings.reduce(
+      (acc: number, rating: any) =>
+        acc + Number(rating.score || 0),
+      0
+    );
+
+    averageRating = sum / ratings.length;
+  }
+
+  const result = {
+    ...newStaff,
+
+    imageUrl:
+      (newStaff.staffProfile as any)?.imageUrl || null,
+
+    image:
+      (newStaff.staffProfile as any)?.imageUrl || null,
+
+    averageRating,
   };
+
+  console.log('STAFF CREATED SUCCESSFULLY:', result.id);
+  console.log('================================');
+
+  return result;
 };
 
-export const updateStaff = async (id: string, requesterId: string, requesterRole: string, data: any) => {
-  const user = await prisma.user.findFirst({ where: { id, role: Role.STAFF }, include: { staffProfile: true } });
-  if (!user) throw new Error('Staff not found');
+/**
+ * UPDATE STAFF
+ */
+export const updateStaff = async (
+  id: string,
+  requesterId: string,
+  requesterRole: string,
+  data: any
+) => {
+  const user = await prisma.user.findFirst({
+    where: {
+      id,
+      role: Role.STAFF,
+    },
 
-  if (requesterRole !== Role.ADMIN && user.id !== requesterId) {
+    include: {
+      staffProfile: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('Staff not found');
+  }
+
+  if (
+    requesterRole !== Role.ADMIN &&
+    user.id !== requesterId
+  ) {
     throw new Error('Unauthorized');
   }
 
   const updateData: any = {};
-  if (data.firstName) updateData.firstName = data.firstName;
-  if (data.lastName) updateData.lastName = data.lastName;
-  if (data.isActive !== undefined) updateData.isActive = data.isActive;
+
+  if (data.firstName !== undefined) {
+    updateData.firstName = data.firstName;
+  }
+
+  if (data.lastName !== undefined) {
+    updateData.lastName = data.lastName;
+  }
+
+  if (data.email !== undefined) {
+    updateData.email = data.email;
+  }
+
+  if (data.username !== undefined) {
+    updateData.username = data.username;
+  }
+
+  if (data.isActive !== undefined) {
+    updateData.isActive = data.isActive;
+  }
+
+  if (data.password) {
+    updateData.password = await hashPassword(data.password);
+  }
 
   const profileUpdateData: any = {};
-  if (data.bio !== undefined) profileUpdateData.bio = data.bio;
-  if (data.position !== undefined) profileUpdateData.position = data.position;
-  if (data.imageUrl !== undefined) profileUpdateData.imageUrl = data.imageUrl;
-  if (data.isActive !== undefined) profileUpdateData.isActive = data.isActive;
+
+  if (data.bio !== undefined) {
+    profileUpdateData.bio = data.bio;
+  }
+
+  if (data.position !== undefined) {
+    profileUpdateData.position = data.position;
+  }
+
+  if (data.imageUrl !== undefined) {
+    profileUpdateData.imageUrl = data.imageUrl;
+  }
 
   const updatedStaff = await prisma.user.update({
-    where: { id },
+    where: {
+      id,
+    },
+
     data: {
       ...updateData,
+
       staffProfile: {
         update: profileUpdateData,
       },
     },
+
     select: {
       id: true,
       email: true,
+      username: true,
       firstName: true,
       lastName: true,
       isActive: true,
+
       staffProfile: {
         include: {
-          services: { include: { service: true } },
+          services: {
+            include: {
+              service: true,
+            },
+          },
+
           workingHours: true,
-          ratings: { select: { score: true } },
+
+          ratings: {
+            select: {
+              score: true,
+            },
+          },
         },
       },
     },
@@ -205,49 +628,97 @@ export const updateStaff = async (id: string, requesterId: string, requesterRole
 
   return {
     ...updatedStaff,
-    imageUrl: (updatedStaff.staffProfile as any)?.imageUrl || null,
-    image: (updatedStaff.staffProfile as any)?.imageUrl || null,
+
+    imageUrl:
+      (updatedStaff.staffProfile as any)?.imageUrl || null,
+
+    image:
+      (updatedStaff.staffProfile as any)?.imageUrl || null,
   };
 };
 
-export const assignServices = async (staffUserId: string, serviceIds: string[]) => {
+/**
+ * Assign services to staff
+ */
+export const assignServices = async (
+  staffUserId: string,
+  serviceIds: string[]
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
+    where: {
+      id: staffUserId,
+    },
+
+    include: {
+      staffProfile: true,
+    },
   });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
   const staffId = user.staffProfile.id;
-  const safeServiceIds = Array.isArray(serviceIds) ? serviceIds : [];
+
+  const safeServiceIds = Array.isArray(serviceIds)
+    ? serviceIds
+    : [];
 
   return prisma.$transaction(async (tx) => {
-    // Clear existing assignments first to support update
     await tx.staffService.deleteMany({
-      where: { staffId },
+      where: {
+        staffId,
+      },
     });
 
-    // Bulk insert new assignments
     if (safeServiceIds.length > 0) {
       await tx.staffService.createMany({
         data: safeServiceIds.map((serviceId) => ({
           staffId,
           serviceId,
         })),
+
+        skipDuplicates: true,
       });
     }
 
     return tx.staffProfile.findUnique({
-      where: { id: staffId },
-      include: { services: { include: { service: true } } },
+      where: {
+        id: staffId,
+      },
+
+      include: {
+        services: {
+          include: {
+            service: true,
+          },
+        },
+      },
     });
-  });
+  }, { timeout: 15000 });
 };
 
-export const removeService = async (staffUserId: string, serviceId: string) => {
+/**
+ * Remove service from staff
+ */
+export const removeService = async (
+  staffUserId: string,
+  serviceId: string
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
+    where: {
+      id: staffUserId,
+    },
+
+    include: {
+      staffProfile: true,
+    },
   });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
   const staffId = user.staffProfile.id;
 
   return prisma.staffService.delete({
@@ -260,12 +731,27 @@ export const removeService = async (staffUserId: string, serviceId: string) => {
   });
 };
 
-export const createBlockedPeriod = async (staffUserId: string, data: any) => {
+/**
+ * Create blocked period
+ */
+export const createBlockedPeriod = async (
+  staffUserId: string,
+  data: any
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
+    where: {
+      id: staffUserId,
+    },
+
+    include: {
+      staffProfile: true,
+    },
   });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
   const staffId = user.staffProfile.id;
 
   return prisma.blockedPeriod.create({
@@ -279,37 +765,81 @@ export const createBlockedPeriod = async (staffUserId: string, data: any) => {
   });
 };
 
-export const getBlockedPeriods = async (staffUserId: string) => {
+/**
+ * Get blocked periods
+ */
+export const getBlockedPeriods = async (
+  staffUserId: string
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
+    where: {
+      id: staffUserId,
+    },
+
+    include: {
+      staffProfile: true,
+    },
   });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
   const staffId = user.staffProfile.id;
 
   const blocked = await prisma.blockedPeriod.findMany({
-    where: { staffId },
-    orderBy: { date: 'asc' },
+    where: {
+      staffId,
+    },
+
+    orderBy: {
+      date: 'asc',
+    },
   });
+
   return blocked || [];
 };
 
-export const deleteBlockedPeriod = async (blockedPeriodId: string) => {
+/**
+ * Delete blocked period
+ */
+export const deleteBlockedPeriod = async (
+  blockedPeriodId: string
+) => {
   return prisma.blockedPeriod.delete({
-    where: { id: blockedPeriodId },
+    where: {
+      id: blockedPeriodId,
+    },
   });
 };
 
-export const updateWorkingHours = async (staffUserId: string, workingHours: any[]) => {
+/**
+ * Update working hours
+ */
+export const updateWorkingHours = async (
+  staffUserId: string,
+  workingHours: any[]
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
-  });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
-  const staffId = user.staffProfile.id;
-  const safeWorkingHours = Array.isArray(workingHours) ? workingHours : [];
+    where: {
+      id: staffUserId,
+    },
 
-  // Use a transaction to upsert working hours
+    include: {
+      staffProfile: true,
+    },
+  });
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
+  const staffId = user.staffProfile.id;
+
+  const safeWorkingHours = Array.isArray(workingHours)
+    ? workingHours
+    : [];
+
   return prisma.$transaction(
     safeWorkingHours.map((wh) =>
       prisma.workingHour.upsert({
@@ -319,11 +849,13 @@ export const updateWorkingHours = async (staffUserId: string, workingHours: any[
             dayOfWeek: wh.dayOfWeek,
           },
         },
+
         update: {
           startTime: wh.startTime,
           endTime: wh.endTime,
           isDayOff: wh.isDayOff ?? false,
         },
+
         create: {
           staffId,
           dayOfWeek: wh.dayOfWeek,
@@ -332,21 +864,42 @@ export const updateWorkingHours = async (staffUserId: string, workingHours: any[
           isDayOff: wh.isDayOff ?? false,
         },
       })
-    )
+    ),
+    { timeout: 15000 }
   );
 };
 
-export const getWorkingHours = async (staffUserId: string) => {
+/**
+ * Get working hours
+ */
+export const getWorkingHours = async (
+  staffUserId: string
+) => {
   const user = await prisma.user.findUnique({
-    where: { id: staffUserId },
-    include: { staffProfile: true },
+    where: {
+      id: staffUserId,
+    },
+
+    include: {
+      staffProfile: true,
+    },
   });
-  if (!user || !user.staffProfile) throw new Error('Staff not found');
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
   const staffId = user.staffProfile.id;
 
   const hours = await prisma.workingHour.findMany({
-    where: { staffId },
-    orderBy: { dayOfWeek: 'asc' },
+    where: {
+      staffId,
+    },
+
+    orderBy: {
+      dayOfWeek: 'asc',
+    },
   });
+
   return hours || [];
 };

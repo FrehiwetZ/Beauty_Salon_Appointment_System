@@ -8,7 +8,8 @@ import { api } from "../../../services/api";
 type AdminTab = "staff" | "reviews";
 
 interface StaffFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   specialty: string;
@@ -63,7 +64,8 @@ function AdminStaff() {
   const [isAdding, setIsAdding] = useState(false);
 
   const [formData, setFormData] = useState<StaffFormData>({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     specialty: "",
@@ -199,17 +201,18 @@ function AdminStaff() {
     setIsSubmitting(true);
 
     try {
-      const parts = formData.name.trim().split(/\s+/);
+      const firstName = formData.firstName.trim();
+      const lastName = formData.lastName.trim();
 
-      const firstName = parts[0] || "";
-      const lastName =
-        parts.length > 1
-          ? parts.slice(1).join(" ")
-          : "";
+      const baseUsername =
+        formData.email
+          .split("@")[0]
+          .replace(/[^a-zA-Z0-9_]/g, "")
+          .slice(0, 20) || "staff";
 
       const username =
-        `${formData.email.split("@")[0]}${Math.floor(
-          Math.random() * 1000
+        `${baseUsername}${Math.floor(
+          1000 + Math.random() * 9000
         )}`;
 
       await addStaff({
@@ -232,7 +235,8 @@ function AdminStaff() {
       setIsAdding(false);
 
       setFormData({
-        name: "",
+        firstName: "",
+        lastName: "",
         email: "",
         password: "",
         specialty: "",
@@ -658,17 +662,32 @@ function AdminStaff() {
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Full Name */}
+                {/* First Name */}
 
                 <input
                   required
-                  placeholder="Full Name"
+                  placeholder="First Name"
                   className="p-2 border rounded-lg bg-white text-sm"
-                  value={formData.name}
+                  value={formData.firstName}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      name: e.target.value,
+                      firstName: e.target.value,
+                    })
+                  }
+                />
+
+                {/* Last Name */}
+
+                <input
+                  required
+                  placeholder="Last Name"
+                  className="p-2 border rounded-lg bg-white text-sm"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lastName: e.target.value,
                     })
                   }
                 />

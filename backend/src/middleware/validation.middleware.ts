@@ -13,7 +13,7 @@ export const validateRequest = (schema: ZodTypeAny) => {
       next();
     } catch (error: any) {
       if (error instanceof ZodError) {
-        const message = (error as any).errors.map((e: any) => e.message).join(', ');
+        const message = error.issues.map((e: any) => e.message).join(', ');
         return sendError(res, 400, `Validation Error: ${message}`);
       }
       return sendError(res, 400, 'Invalid request data');
