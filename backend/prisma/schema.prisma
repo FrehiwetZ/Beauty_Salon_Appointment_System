@@ -26,26 +26,38 @@ model User {
 }
 
 model StaffProfile {
-  id             String          @id @default(uuid())
-  userId         String          @unique
-  bio            String?
-  position       String?
-  imageUrl       String?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  appointments   Appointment[]
-  blockedPeriods BlockedPeriod[]
-  ratings        Rating[]
-  user           User            @relation(fields: [userId], references: [id])
-  services       StaffService[]
-  workingHours   WorkingHour[]
+  id                  String          @id @default(uuid())
+  userId              String          @unique
+  bio                 String?
+  bioAm               String?
+  bioOm               String?
+  position            String?
+  positionAm          String?
+  positionOm          String?
+  imageUrl            String?
+  isActive            Boolean         @default(true)
+  deactivationReason  String?
+  deactivatedUntil    DateTime?
+  isDeleted           Boolean         @default(false)
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  appointments        Appointment[]
+  blockedPeriods      BlockedPeriod[]
+  ratings             Rating[]
+  user                User            @relation(fields: [userId], references: [id])
+  services            StaffService[]
+  workingHours        WorkingHour[]
 }
 
 model Service {
   id              String         @id @default(uuid())
   name            String
+  nameAm          String?
+  nameOm          String?
   description     String?
+  descriptionAm   String?
+  descriptionOm   String?
   durationMinutes Int
   price           Float
   isActive        Boolean        @default(true)
@@ -55,6 +67,8 @@ model Service {
   bufferAfter     Int            @default(0)
   bufferBefore    Int            @default(0)
   category        String?
+  categoryAm      String?
+  categoryOm      String?
   appointments    Appointment[]
   ratings         Rating[]
   staff           StaffService[]
@@ -137,7 +151,11 @@ model Post {
   id        String     @id @default(uuid())
   authorId  String
   title     String
+  titleAm   String?
+  titleOm   String?
   content   String
+  contentAm String?
+  contentOm String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   imageUrl  String?
@@ -175,4 +193,31 @@ enum PostStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+model SiteSetting {
+  id               String   @id @default("default")
+  salonName        String   @default("BEAUTY SALON")
+  tagline          String   @default("“Your Beauty, Your Time.”")
+  currency         String   @default("ETB")
+  heroBadge        String?
+  heroTitle        String?
+  heroSubtitle     String?
+  heroImage        String?
+  aboutTitle       String?
+  aboutDescription String?
+  aboutImage       String?
+  showServices     Boolean? @default(true)
+  showStaff        Boolean? @default(true)
+  showPosts        Boolean? @default(true)
+  showStats        Boolean? @default(true)
+  statClients      String?
+  statExperience   String?
+  statRating       String?
+  contactPhone     String?
+  contactEmail     String?
+  contactAddress   String?
+  openingHours     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

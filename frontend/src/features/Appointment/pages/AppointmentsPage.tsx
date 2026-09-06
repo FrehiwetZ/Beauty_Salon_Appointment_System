@@ -6,6 +6,7 @@ import Button from "../../../components/Button";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigation } from "../../../context/NavigationContext";
 import { useToast } from "../../../context/ToastContext";
+import { useLanguage } from "../../../context/LanguageContext";
 import { appointmentService } from "../../../services/appointment.service";
 import { api } from "../../../services/api";
 
@@ -68,8 +69,8 @@ function ReviewModal({ appointmentId, serviceName, staffName, onClose, onSubmitt
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full animate-[fadeIn_0.2s_ease-out]">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto animate-[fadeIn_0.2s_ease-out]">
         <h3 className="text-xl font-bold text-gray-800 mb-1">Leave a Review</h3>
         <p className="text-sm text-gray-500 mb-5">{serviceName} with {staffName}</p>
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -125,9 +126,10 @@ function ReviewModal({ appointmentId, serviceName, staffName, onClose, onSubmitt
 }
 
 function AppointmentsPage() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { setPage, setRedirectAfterLogin, selectedServiceId, setSelectedServiceId } = useNavigation();
   const { success, error: toastError } = useToast();
+  const { t, localizeService } = useLanguage();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [isBooking, setIsBooking] = useState(!!selectedServiceId);
   const [reviewingAppt, setReviewingAppt] = useState<any | null>(null);
@@ -192,16 +194,7 @@ function AppointmentsPage() {
   };
 
   const statusLabel = (status: string) => {
-    const m: Record<string, string> = {
-      PENDING: "Upcoming",
-      CONFIRMED: "Confirmed",
-      IN_PROGRESS: "In Progress",
-      COMPLETED: "Completed",
-      CANCELLED: "Cancelled",
-      NO_SHOW: "No Show",
-      REJECTED: "Rejected",
-    };
-    return m[status] || status;
+    return t(`status.${status}`, status);
   };
 
   const statusColor = (status: string) => {
@@ -217,81 +210,87 @@ function AppointmentsPage() {
       {reviewingAppt && (
         <ReviewModal
           appointmentId={reviewingAppt.id}
-          serviceName={reviewingAppt.service?.name || "Service"}
+          serviceName={reviewingAppt.service ? localizeService(reviewingAppt.service).name : "Service"}
           staffName={`${reviewingAppt.staff?.user?.firstName || ""} ${reviewingAppt.staff?.user?.lastName || ""}`.trim() || "Staff"}
           onClose={() => setReviewingAppt(null)}
           onSubmitted={fetchApts}
         />
       )}
 
-      <main className="flex-grow w-full max-w-4xl mx-auto px-5 py-12">
-        <div className="text-center mb-10">
-          <p className="text-pink-600 font-medium">Your Schedule</p>
-          <h1 className="text-4xl font-bold text-gray-800 mt-2">Appointments</h1>
-          <p className="text-gray-600 mt-3">Manage your upcoming and past appointments.</p>
+      <main className="flex-grow w-full max-w-4xl mx-auto px-4 sm:px-5 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-10">
+          <p className="text-pink-600 font-medium">{t('appointments.schedule')}</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mt-2">{t('nav.appointments')}</h1>
+          <p className="text-gray-600 mt-2 sm:mt-3 text-sm sm:text-base">{t('appointments.subtitle')}</p>
         </div>
 
         {!isBooking ? (
           <div>
             <div className="flex justify-end mb-6">
-              <Button onClick={handleBookClick}>+ Book New Appointment</Button>
+              <Button onClick={handleBookClick}>+ {t('appointments.bookNew')}</Button>
             </div>
 
             {!isAuthenticated ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm px-4">
                 <div className="text-5xl mb-4">🔒</div>
-                <p className="text-gray-500 mb-4">Please sign in to view your appointments.</p>
-                <Button onClick={() => { setRedirectAfterLogin("appointments"); setPage("login"); }}>Sign In</Button>
+                <p className="text-gray-500 mb-4">{t('auth.signInToContinue', 'Please sign in to view your appointments.')}</p>
+                <Button onClick={() => { setRedirectAfterLogin("appointments"); setPage("login"); }}>{t('nav.signIn', 'Sign In')}</Button>
               </div>
             ) : appointments.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm">
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm px-4">
                 <div className="text-5xl mb-4">📅</div>
-                <p className="text-gray-700 font-medium mb-1">No appointments yet.</p>
-                <p className="text-gray-400 text-sm mb-6">Book your first appointment to get started.</p>
-                <Button onClick={handleBookClick}>Book Now</Button>
+                <p className="text-gray-700 font-medium mb-1">{t('appointments.noAppointments', 'No appointments yet.')}</p>
+                <p className="text-gray-400 text-sm mb-6">{t('appointments.subtitle', 'Book your first appointment to get started.')}</p>
+                <Button onClick={handleBookClick}>{t('landing.bookAppointment', 'Book Now')}</Button>
               </div>
             ) : (
               <div className="space-y-4">
-                {appointments.map((apt: any) => (
-                  <div key={apt.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-grow">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="font-bold text-gray-800 text-lg">{apt.service?.name}</h3>
-                          <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${statusColor(apt.status)}`}>
-                            {statusLabel(apt.status)}
-                          </span>
+                {appointments.map((apt: any) => {
+                  const locService = apt.service ? localizeService(apt.service) : null;
+                  return (
+                    <div key={apt.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                        <div className="flex-grow">
+                          <div className="flex items-center gap-2.5 sm:gap-3 mb-2.5 flex-wrap">
+                            <h3 className="font-bold text-gray-800 text-base sm:text-lg">{locService ? locService.name : (apt.service?.name || "Service")}</h3>
+                            <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${statusColor(apt.status)}`}>
+                              {statusLabel(apt.status)}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm text-gray-600">
+                            <div><span className="text-gray-400 text-[11px] sm:text-xs">{t('appointments.stylist')}</span><br/><span className="font-medium text-gray-700">{apt.staff?.user?.firstName} {apt.staff?.user?.lastName}</span></div>
+                            <div><span className="text-gray-400 text-[11px] sm:text-xs">{t('appointments.date')}</span><br/><span className="font-medium text-gray-700">{apt.date}</span></div>
+                            <div><span className="text-gray-400 text-[11px] sm:text-xs">{t('appointments.time')}</span><br/><span className="font-medium text-gray-700">{apt.startTime}{apt.endTime ? ` — ${apt.endTime}` : ""}</span></div>
+                            {apt.service?.price !== undefined && (
+                              <div><span className="text-gray-400 text-[11px] sm:text-xs">Price</span><br/><span className="font-medium text-gray-700">{apt.service.price} ETB</span></div>
+                            )}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1 text-sm text-gray-600">
-                          <div><span className="text-gray-400">Stylist</span><br/><span className="font-medium text-gray-700">{apt.staff?.user?.firstName} {apt.staff?.user?.lastName}</span></div>
-                          <div><span className="text-gray-400">Date</span><br/><span className="font-medium text-gray-700">{apt.date}</span></div>
-                          <div><span className="text-gray-400">Time</span><br/><span className="font-medium text-gray-700">{apt.startTime}{apt.endTime ? ` — ${apt.endTime}` : ""}</span></div>
+                        <div className="flex flex-row sm:flex-col gap-2 items-center sm:items-end justify-between sm:justify-start pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100 flex-shrink-0">
+                          {apt.status === "COMPLETED" && !ratedIds.has(apt.id) && (
+                            <button
+                              onClick={() => setReviewingAppt(apt)}
+                              className="text-xs bg-yellow-50 border border-yellow-200 text-yellow-700 hover:bg-yellow-100 px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer"
+                            >
+                              ★ Write a Review
+                            </button>
+                          )}
+                          {apt.status === "COMPLETED" && ratedIds.has(apt.id) && (
+                            <span className="text-xs text-green-600 font-medium">✓ Reviewed</span>
+                          )}
+                          {(apt.status === "PENDING" || apt.status === "CONFIRMED") && (
+                            <button
+                              onClick={() => { if (confirm(t('appointments.confirmCancel'))) handleCancel(apt.id); }}
+                              className="text-xs text-red-500 hover:text-red-700 hover:underline transition-colors cursor-pointer"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                        {apt.status === "COMPLETED" && !ratedIds.has(apt.id) && (
-                          <button
-                            onClick={() => setReviewingAppt(apt)}
-                            className="text-xs bg-yellow-50 border border-yellow-200 text-yellow-700 hover:bg-yellow-100 px-3 py-1.5 rounded-xl font-medium transition-colors cursor-pointer"
-                          >
-                            ★ Write a Review
-                          </button>
-                        )}
-                        {apt.status === "COMPLETED" && ratedIds.has(apt.id) && (
-                          <span className="text-xs text-green-600 font-medium">✓ Reviewed</span>
-                        )}
-                        {(apt.status === "PENDING" || apt.status === "CONFIRMED") && (
-                          <button
-                            onClick={() => { if (confirm("Cancel this appointment?")) handleCancel(apt.id); }}
-                            className="text-xs text-red-500 hover:text-red-700 hover:underline transition-colors cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -46,7 +46,7 @@ export function Modal({
       {/* Modal Dialog Content */}
       <div
         className={`
-          w-full max-w-md rounded-xl bg-white p-6 shadow-xl
+          w-full max-w-md rounded-2xl bg-white p-4 sm:p-6 shadow-xl max-h-[90vh] overflow-y-auto
           ${className}
         `.trim()}
         onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside the card

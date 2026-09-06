@@ -15,6 +15,10 @@ interface StaffFormData {
   specialty: string;
   experience: string;
   category: string;
+  positionAm?: string;
+  positionOm?: string;
+  bioAm?: string;
+  bioOm?: string;
   imageUrl: string;
 }
 
@@ -22,7 +26,11 @@ interface EditProfileData {
   firstName: string;
   lastName: string;
   position: string;
+  positionAm?: string;
+  positionOm?: string;
   bio: string;
+  bioAm?: string;
+  bioOm?: string;
   imageUrl: string;
 }
 
@@ -225,7 +233,11 @@ function AdminStaff() {
         bio:
           `${formData.specialty} ${formData.experience}`.trim() ||
           undefined,
+        bioAm: formData.bioAm?.trim() || undefined,
+        bioOm: formData.bioOm?.trim() || undefined,
         position: formData.category.trim() || undefined,
+        positionAm: formData.positionAm?.trim() || undefined,
+        positionOm: formData.positionOm?.trim() || undefined,
         imageUrl: formData.imageUrl.trim() || undefined,
         serviceIds: selectedNewServiceIds,
       });
@@ -242,6 +254,10 @@ function AdminStaff() {
         specialty: "",
         experience: "",
         category: "",
+        positionAm: "",
+        positionOm: "",
+        bioAm: "",
+        bioOm: "",
         imageUrl: "",
       });
 
@@ -291,9 +307,25 @@ function AdminStaff() {
           staffData?.staffProfile?.position ||
           staffData?.position ||
           "",
+        positionAm:
+          staffData?.staffProfile?.positionAm ||
+          staffData?.positionAm ||
+          "",
+        positionOm:
+          staffData?.staffProfile?.positionOm ||
+          staffData?.positionOm ||
+          "",
         bio:
           staffData?.staffProfile?.bio ||
           staffData?.bio ||
+          "",
+        bioAm:
+          staffData?.staffProfile?.bioAm ||
+          staffData?.bioAm ||
+          "",
+        bioOm:
+          staffData?.staffProfile?.bioOm ||
+          staffData?.bioOm ||
           "",
         imageUrl:
           staffData?.staffProfile?.imageUrl ||
@@ -386,8 +418,20 @@ function AdminStaff() {
         position:
           editProfileData.position.trim() || undefined,
 
+        positionAm:
+          editProfileData.positionAm?.trim() || undefined,
+
+        positionOm:
+          editProfileData.positionOm?.trim() || undefined,
+
         bio:
           editProfileData.bio.trim() || undefined,
+
+        bioAm:
+          editProfileData.bioAm?.trim() || undefined,
+
+        bioOm:
+          editProfileData.bioOm?.trim() || undefined,
 
         imageUrl:
           editProfileData.imageUrl.trim() || undefined,
@@ -591,18 +635,18 @@ function AdminStaff() {
   // ============================================================
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100">
       {/* ========================================================
           TAB NAVIGATION
       ======================================================== */}
 
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
+      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
         {(["staff", "reviews"] as AdminTab[]).map(
           (currentTab) => (
             <button
               key={currentTab}
               onClick={() => setTab(currentTab)}
-              className={`px-4 py-2 text-sm font-medium capitalize rounded-t transition-colors ${tab === currentTab
+              className={`px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium capitalize rounded-t transition-colors whitespace-nowrap ${tab === currentTab
                 ? "bg-white border-t border-l border-r border-gray-200 text-pink-600 -mb-px"
                 : "text-gray-500 hover:text-gray-700"
                 }`}
@@ -623,7 +667,7 @@ function AdminStaff() {
         <div>
           {/* Header */}
 
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
             <h2 className="text-xl font-bold text-gray-800">
               Staff Members
             </h2>
@@ -724,8 +768,7 @@ function AdminStaff() {
                   }
                 />
 
-                {/* Position */}
-
+                {/* Position (EN, AM, OM) */}
                 <input
                   placeholder="Position / Category (e.g. Master Stylist)"
                   className="p-2 border rounded-lg bg-white text-sm"
@@ -738,8 +781,31 @@ function AdminStaff() {
                   }
                 />
 
-                {/* Specialty */}
+                <input
+                  placeholder="የስራ መደብ (አማርኛ - Optional)"
+                  className="p-2 border rounded-lg bg-white text-sm"
+                  value={formData.positionAm || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      positionAm: e.target.value,
+                    })
+                  }
+                />
 
+                <input
+                  placeholder="Sadarkaa Hojii (Afaan Oromoo - Optional)"
+                  className="p-2 border rounded-lg bg-white text-sm"
+                  value={formData.positionOm || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      positionOm: e.target.value,
+                    })
+                  }
+                />
+
+                {/* Specialty */}
                 <input
                   placeholder="Specialty (e.g. Balayage Expert)"
                   className="p-2 border rounded-lg bg-white text-sm"
@@ -753,7 +819,6 @@ function AdminStaff() {
                 />
 
                 {/* Experience */}
-
                 <input
                   placeholder="Experience (e.g. 5 Years)"
                   className="p-2 border rounded-lg bg-white text-sm"
@@ -766,8 +831,34 @@ function AdminStaff() {
                   }
                 />
 
-                {/* Staff Image */}
+                {/* Localized Bio */}
+                <textarea
+                  placeholder="የግል ታሪክ/ስፔሻሊቲ በአማርኛ (Bio Amharic - Optional)"
+                  rows={2}
+                  className="p-2 border rounded-lg bg-white text-sm"
+                  value={formData.bioAm || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bioAm: e.target.value,
+                    })
+                  }
+                />
 
+                <textarea
+                  placeholder="Ibsa dhuunfaa Afaan Oromootiin (Bio Afaan Oromoo - Optional)"
+                  rows={2}
+                  className="p-2 border rounded-lg bg-white text-sm"
+                  value={formData.bioOm || ''}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      bioOm: e.target.value,
+                    })
+                  }
+                />
+
+                {/* Staff Image */}
                 <div className="col-span-1 md:col-span-2">
                   <ImageUpload
                     label="Staff Profile Image (Cloudflare R2)"
@@ -1054,37 +1145,84 @@ function AdminStaff() {
                             }
                           />
 
-                          {/* Position */}
+                          {/* Position (EN, AM, OM) */}
+                          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <input
+                              placeholder="Position (English)"
+                              className="p-2 border rounded-lg text-sm"
+                              value={editProfileData.position}
+                              onChange={(e) =>
+                                setEditProfileData({
+                                  ...editProfileData,
+                                  position: e.target.value,
+                                })
+                              }
+                            />
+                            <input
+                              placeholder="የስራ መደብ (አማርኛ)"
+                              className="p-2 border rounded-lg text-sm"
+                              value={editProfileData.positionAm || ''}
+                              onChange={(e) =>
+                                setEditProfileData({
+                                  ...editProfileData,
+                                  positionAm: e.target.value,
+                                })
+                              }
+                            />
+                            <input
+                              placeholder="Sadarkaa Hojii (Afaan Oromoo)"
+                              className="p-2 border rounded-lg text-sm"
+                              value={editProfileData.positionOm || ''}
+                              onChange={(e) =>
+                                setEditProfileData({
+                                  ...editProfileData,
+                                  positionOm: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
 
-                          <input
-                            placeholder="Position (e.g. Master Stylist)"
-                            className="p-2 border rounded-lg text-sm md:col-span-2"
-                            value={
-                              editProfileData.position
-                            }
-                            onChange={(e) =>
-                              setEditProfileData({
-                                ...editProfileData,
-                                position:
-                                  e.target.value,
-                              })
-                            }
-                          />
-
-                          {/* Bio */}
-
-                          <textarea
-                            placeholder="Bio & Specialties"
-                            rows={2}
-                            className="p-2 border rounded-lg text-sm md:col-span-2"
-                            value={editProfileData.bio}
-                            onChange={(e) =>
-                              setEditProfileData({
-                                ...editProfileData,
-                                bio: e.target.value,
-                              })
-                            }
-                          />
+                          {/* Bio (EN, AM, OM) */}
+                          <div className="md:col-span-2 space-y-2">
+                            <textarea
+                              placeholder="Bio & Specialties (English)"
+                              rows={2}
+                              className="w-full p-2 border rounded-lg text-sm"
+                              value={editProfileData.bio}
+                              onChange={(e) =>
+                                setEditProfileData({
+                                  ...editProfileData,
+                                  bio: e.target.value,
+                                })
+                              }
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              <textarea
+                                placeholder="የግል ታሪክ/ስፔሻሊቲ (አማርኛ)"
+                                rows={2}
+                                className="w-full p-2 border rounded-lg text-sm"
+                                value={editProfileData.bioAm || ''}
+                                onChange={(e) =>
+                                  setEditProfileData({
+                                    ...editProfileData,
+                                    bioAm: e.target.value,
+                                  })
+                                }
+                              />
+                              <textarea
+                                placeholder="Ibsa dhuunfaa (Afaan Oromoo)"
+                                rows={2}
+                                className="w-full p-2 border rounded-lg text-sm"
+                                value={editProfileData.bioOm || ''}
+                                onChange={(e) =>
+                                  setEditProfileData({
+                                    ...editProfileData,
+                                    bioOm: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          </div>
 
                           {/* Image */}
 

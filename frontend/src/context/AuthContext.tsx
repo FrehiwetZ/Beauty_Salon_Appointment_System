@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AuthUser } from '../features/Authentication/types/auth';
 import { useNavigation } from './NavigationContext';
 import { authService } from '../services/auth.service';
@@ -8,6 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (token: string, userData: any) => void;
   logout: () => void;
+  updateUser: (userData: Partial<AuthUser>) => void;
   loading: boolean;
 }
 
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   login: () => {},
   logout: () => {},
+  updateUser: () => {},
   loading: true,
 });
 
@@ -65,10 +67,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setPage('login');
   };
 
+  const updateUser = (userData: Partial<AuthUser>) => {
+    setUser((prev) => (prev ? { ...prev, ...userData } : null));
+  };
+
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, updateUser, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

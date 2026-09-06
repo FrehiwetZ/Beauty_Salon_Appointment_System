@@ -140,11 +140,11 @@ export const createAppointment = async (userId: string, data: any) => {
       });
 
       if (!staffUser || !staffUser.staffProfile) {
-        throw new Error('Staff not found or inactive');
+        throw new Error('This staff member is currently inactive.');
       }
 
       if (staffUser.staffProfile.isActive === false) {
-        throw new Error('Staff member is deactivated');
+        throw new Error('This staff member is currently inactive.');
       }
 
       if (staffUser.staffProfile.services.length === 0) {

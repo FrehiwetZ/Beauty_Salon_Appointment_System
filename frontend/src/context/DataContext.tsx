@@ -28,9 +28,10 @@ interface DataContextType {
   deleteAppointment: (id: string) => void;
 
   newsList: NewsPost[];
-  addNews: (news: NewsPost) => void;
-  updateNews: (news: NewsPost) => void;
-  deleteNews: (id: string) => void;
+  addNews: (news: any) => Promise<any>;
+  updateNews: (news: any) => Promise<any>;
+  deleteNews: (id: string) => Promise<any>;
+  refreshNews: () => Promise<void>;
 
   usersList: AuthUser[];
   updateUser: (user: AuthUser) => void;
@@ -59,7 +60,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         const [servicesRes, staffRes, newsRes] = await Promise.all([
           serviceService.getServices().catch(() => ({ success: false, data: [] })),
           staffService.getStaff().catch(() => ({ success: false, data: [] })),
-          api.get('/posts').then(res => res.data).catch(() => ({ success: false, data: [] }))
+          api.get('/posts?limit=100').then(res => res.data).catch(() => ({ success: false, data: [] }))
         ]);
         if (servicesRes.success) {
           const rawServices = Array.isArray(servicesRes.data?.data)
@@ -75,7 +76,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
             : Array.isArray(staffRes.data)
             ? staffRes.data
             : [];
-          setStaffList(rawStaff);
+          const nonDeletedStaff = rawStaff.filter((s: any) => !s.isDeleted && !s.staffProfile?.isDeleted);
+          setStaffList(nonDeletedStaff);
         }
         if (newsRes.success) {
           const rawNews = Array.isArray(newsRes.data?.data)
@@ -90,7 +92,23 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     fetchData();
-  }, []);
+  }, [isAuthenticated, user?.role]);
+
+  const refreshNews = async () => {
+    try {
+      const res = await api.get('/posts?limit=100');
+      if (res.data.success) {
+        const rawNews = Array.isArray(res.data.data?.data)
+          ? res.data.data.data
+          : Array.isArray(res.data.data)
+          ? res.data.data
+          : [];
+        setNewsList(rawNews);
+      }
+    } catch (e) {
+      console.error("Failed to refresh announcements", e);
+    }
+  };
 
   // Fetch appointments for admin users
   React.useEffect(() => {
@@ -180,11 +198,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
   const deleteStaff = async (id: string) => {
     try {
-      const res = await api.delete(`/users/${id}`);
-      if (res.data.success) {
-        setStaffList(prev => (Array.isArray(prev) ? prev : []).filter(s => s.id !== id));
+      const res = await api.delete(`/staff/${id}/soft-delete`);
+      if (res.data?.success) {
+        setStaffList(prev => (Array.isArray(prev) ? prev : []).filter(s => s.id !== id && s.staffProfile?.id !== id));
+        return;
       }
-    } catch(e) { console.error(e); }
+    } catch (e) {
+      console.warn("Soft-delete route failed, attempting /users fallback:", e);
+      try {
+        const res = await api.delete(`/users/${id}`);
+        if (res.data?.success) {
+          setStaffList(prev => (Array.isArray(prev) ? prev : []).filter(s => s.id !== id && s.staffProfile?.id !== id));
+        }
+      } catch (err2) {
+        console.error("Failed to delete staff:", err2);
+      }
+    }
   };
 
   const addAppointment = async (apt: any) => {
@@ -243,14 +272,52 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
 
   const addNews = async (news: any) => {
     try {
-      const res = await api.post('/posts', news);
+      const res = await api.post('/posts', {
+        title: news.title,
+        content: news.content,
+        imageUrl: news.imageUrl || null,
+        status: news.status || 'APPROVED',
+      });
       if (res.data.success && res.data.data) {
-        setNewsList(prev => [...(Array.isArray(prev) ? prev : []), res.data.data]);
+        setNewsList(prev => [res.data.data, ...(Array.isArray(prev) ? prev : [])]);
+        return res.data.data;
       }
-    } catch(e) { console.error(e); }
+    } catch (e) {
+      console.error("addNews error:", e);
+      throw e;
+    }
   };
-  const updateNews = (news: NewsPost) => setNewsList(prev => (Array.isArray(prev) ? prev : []).map(n => n.id === news.id ? news : n));
-  const deleteNews = (id: string) => setNewsList(prev => (Array.isArray(prev) ? prev : []).filter(n => n.id !== id));
+
+  const updateNews = async (news: any) => {
+    try {
+      const res = await api.patch(`/posts/${news.id}`, {
+        title: news.title,
+        content: news.content,
+        imageUrl: news.imageUrl,
+        status: news.status,
+      });
+      if (res.data.success && res.data.data) {
+        setNewsList(prev => (Array.isArray(prev) ? prev : []).map(n => n.id === news.id ? res.data.data : n));
+        return res.data.data;
+      }
+    } catch (e) {
+      console.error("updateNews error:", e);
+      throw e;
+    }
+  };
+
+  const deleteNews = async (id: string) => {
+    try {
+      const res = await api.delete(`/posts/${id}`);
+      if (res.data.success) {
+        setNewsList(prev => (Array.isArray(prev) ? prev : []).filter(n => n.id !== id));
+        return res.data;
+      }
+    } catch (e) {
+      console.error("deleteNews error:", e);
+      throw e;
+    }
+  };
 
   const updateUser = (user: AuthUser) => setUsersList(prev => (Array.isArray(prev) ? prev : []).map(u => u.id === user.id ? user : u));
 
@@ -259,7 +326,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       services, addService, updateService, deleteService,
       staffList, addStaff, updateStaff, deleteStaff,
       appointments, addAppointment, updateAppointment, deleteAppointment,
-      newsList, addNews, updateNews, deleteNews,
+      newsList, addNews, updateNews, deleteNews, refreshNews,
       usersList, updateUser
     }}>
       {children}

@@ -6,17 +6,23 @@ import { NavigationProvider } from './context/NavigationContext.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { DataProvider } from './context/DataContext.tsx'
 import { ToastProvider } from './context/ToastContext.tsx'
+import { BrandingProvider } from './context/BrandingContext.tsx'
+import { LanguageProvider } from './context/LanguageContext.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <NavigationProvider>
-      <AuthProvider>
-        <DataProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </DataProvider>
-      </AuthProvider>
-    </NavigationProvider>
+    <LanguageProvider>
+      <NavigationProvider>
+        <AuthProvider>
+          <DataProvider>
+            <ToastProvider>
+              <BrandingProvider>
+                <App />
+              </BrandingProvider>
+            </ToastProvider>
+          </DataProvider>
+        </AuthProvider>
+      </NavigationProvider>
+    </LanguageProvider>
   </StrictMode>,
 )

@@ -36,6 +36,7 @@ export const getAdminDashboardData = async () => {
     totalAppointments,
     completedAppointments,
     totalRevenue,
+    currency: 'ETB',
     recentAppointments,
   };
 };

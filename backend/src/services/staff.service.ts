@@ -16,32 +16,56 @@ export const getAllStaff = async (
 
   const whereClause: any = {
     role: Role.STAFF,
+    staffProfile: {
+      isDeleted: false,
+    },
   };
 
   if (search && search.trim()) {
     const searchValue = search.trim();
 
-    whereClause.OR = [
+    whereClause.AND = [
       {
-        firstName: {
-          contains: searchValue,
-          mode: 'insensitive',
-        },
-      },
-      {
-        lastName: {
-          contains: searchValue,
-          mode: 'insensitive',
-        },
-      },
-      {
-        email: {
-          contains: searchValue,
-          mode: 'insensitive',
-        },
+        OR: [
+          {
+            firstName: {
+              contains: searchValue,
+              mode: 'insensitive',
+            },
+          },
+          {
+            lastName: {
+              contains: searchValue,
+              mode: 'insensitive',
+            },
+          },
+          {
+            email: {
+              contains: searchValue,
+              mode: 'insensitive',
+            },
+          },
+        ],
       },
     ];
   }
+
+  // Auto-reactivate staff whose deactivatedUntil has passed
+  await prisma.staffProfile.updateMany({
+    where: {
+      isActive: false,
+      isDeleted: false,
+      deactivatedUntil: {
+        lte: new Date(),
+        not: null,
+      },
+    },
+    data: {
+      isActive: true,
+      deactivationReason: null,
+      deactivatedUntil: null,
+    },
+  });
 
   const [staff, total] = await Promise.all([
     prisma.user.findMany({
@@ -86,7 +110,12 @@ export const getAllStaff = async (
     }),
   ]);
 
-  const formattedStaff = (Array.isArray(staff) ? staff : []).map((s) => {
+  // Filter out soft-deleted staff for public listing
+  const visibleStaff = staff.filter(
+    (s) => !(s.staffProfile as any)?.isDeleted
+  );
+
+  const formattedStaff = (Array.isArray(visibleStaff) ? visibleStaff : []).map((s) => {
     const ratings = Array.isArray(s.staffProfile?.ratings)
       ? s.staffProfile.ratings
       : [];
@@ -347,17 +376,33 @@ export const createStaff = async (data: any) => {
             data?.bio !== undefined
               ? String(data.bio)
               : null,
+          bioAm:
+            data?.bioAm !== undefined
+              ? String(data.bioAm)
+              : null,
+          bioOm:
+            data?.bioOm !== undefined
+              ? String(data.bioOm)
+              : null,
 
           position:
             data?.position !== undefined
               ? String(data.position)
+              : null,
+          positionAm:
+            data?.positionAm !== undefined
+              ? String(data.positionAm)
+              : null,
+          positionOm:
+            data?.positionOm !== undefined
+              ? String(data.positionOm)
               : null,
 
           imageUrl:
             data?.imageUrl
               ? String(data.imageUrl)
               : null,
-        },
+        } as any,
       });
 
       console.log('Staff profile created:', staffProfile.id);
@@ -576,9 +621,21 @@ export const updateStaff = async (
   if (data.bio !== undefined) {
     profileUpdateData.bio = data.bio;
   }
+  if (data.bioAm !== undefined) {
+    profileUpdateData.bioAm = data.bioAm;
+  }
+  if (data.bioOm !== undefined) {
+    profileUpdateData.bioOm = data.bioOm;
+  }
 
   if (data.position !== undefined) {
     profileUpdateData.position = data.position;
+  }
+  if (data.positionAm !== undefined) {
+    profileUpdateData.positionAm = data.positionAm;
+  }
+  if (data.positionOm !== undefined) {
+    profileUpdateData.positionOm = data.positionOm;
   }
 
   if (data.imageUrl !== undefined) {
@@ -841,30 +898,34 @@ export const updateWorkingHours = async (
     : [];
 
   return prisma.$transaction(
-    safeWorkingHours.map((wh) =>
-      prisma.workingHour.upsert({
-        where: {
-          staffId_dayOfWeek: {
-            staffId,
-            dayOfWeek: wh.dayOfWeek,
-          },
-        },
+    async (tx) => {
+      return Promise.all(
+        safeWorkingHours.map((wh) =>
+          tx.workingHour.upsert({
+            where: {
+              staffId_dayOfWeek: {
+                staffId,
+                dayOfWeek: wh.dayOfWeek,
+              },
+            },
 
-        update: {
-          startTime: wh.startTime,
-          endTime: wh.endTime,
-          isDayOff: wh.isDayOff ?? false,
-        },
+            update: {
+              startTime: wh.startTime,
+              endTime: wh.endTime,
+              isDayOff: wh.isDayOff ?? false,
+            },
 
-        create: {
-          staffId,
-          dayOfWeek: wh.dayOfWeek,
-          startTime: wh.startTime,
-          endTime: wh.endTime,
-          isDayOff: wh.isDayOff ?? false,
-        },
-      })
-    ),
+            create: {
+              staffId,
+              dayOfWeek: wh.dayOfWeek,
+              startTime: wh.startTime,
+              endTime: wh.endTime,
+              isDayOff: wh.isDayOff ?? false,
+            },
+          })
+        )
+      );
+    },
     { timeout: 15000 }
   );
 };
@@ -902,4 +963,228 @@ export const getWorkingHours = async (
   });
 
   return hours || [];
+};
+
+/**
+ * Helper: Find staff user by either user.id or staffProfile.id
+ */
+const findStaffUser = async (id: string) => {
+  let user = await prisma.user.findFirst({
+    where: { id, role: Role.STAFF },
+    include: { staffProfile: true },
+  });
+
+  if (!user) {
+    const profile = await prisma.staffProfile.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (profile && profile.user) {
+      user = { ...profile.user, staffProfile: profile } as any;
+    }
+  }
+
+  return user;
+};
+
+/**
+ * Soft-delete a staff member (preserves history)
+ */
+export const softDeleteStaff = async (staffUserId: string) => {
+  const user = await findStaffUser(staffUserId);
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
+  // Mark staff profile as deleted
+  await prisma.staffProfile.update({
+    where: { id: user.staffProfile.id },
+    data: {
+      isDeleted: true,
+      deletedAt: new Date(),
+      isActive: false,
+    },
+  });
+
+  // Deactivate user account so they can't log in
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { isActive: false },
+  });
+
+  return { success: true, message: 'Staff member deleted' };
+};
+
+/**
+ * Deactivate a staff member with reason and optional duration
+ */
+export const deactivateStaff = async (
+  staffUserId: string,
+  reason: string,
+  deactivatedUntil?: string // ISO date string or undefined for indefinite
+) => {
+  const user = await findStaffUser(staffUserId);
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
+  if ((user.staffProfile as any).isDeleted) {
+    throw new Error('Staff member has been deleted');
+  }
+
+  const untilDate = deactivatedUntil ? new Date(deactivatedUntil) : null;
+
+  await prisma.staffProfile.update({
+    where: { id: user.staffProfile.id },
+    data: {
+      isActive: false,
+      deactivationReason: reason || 'No reason provided',
+      deactivatedUntil: untilDate,
+    } as any,
+  });
+
+  return prisma.user.findFirst({
+    where: { id: user.id },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+      staffProfile: true,
+    },
+  });
+};
+
+/**
+ * Reactivate a deactivated staff member
+ */
+export const reactivateStaff = async (staffUserId: string) => {
+  const user = await findStaffUser(staffUserId);
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
+  if ((user.staffProfile as any).isDeleted) {
+    throw new Error('Cannot reactivate a deleted staff member');
+  }
+
+  await prisma.staffProfile.update({
+    where: { id: user.staffProfile.id },
+    data: {
+      isActive: true,
+      deactivationReason: null,
+      deactivatedUntil: null,
+    } as any,
+  });
+
+  return prisma.user.findFirst({
+    where: { id: user.id },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      isActive: true,
+      staffProfile: true,
+    },
+  });
+};
+
+/**
+ * Get all appointments for a specific staff member (for admin view)
+ */
+export const getStaffAppointments = async (staffUserId: string) => {
+  const user = await findStaffUser(staffUserId);
+
+  if (!user || !user.staffProfile) {
+    throw new Error('Staff not found');
+  }
+
+  const staffProfileId = user.staffProfile.id;
+
+  const appointments = await prisma.appointment.findMany({
+    where: { staffId: staffProfileId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          durationMinutes: true,
+        },
+      },
+      rating: {
+        select: {
+          id: true,
+          score: true,
+          comment: true,
+          satisfaction: true,
+          createdAt: true,
+        },
+      },
+    },
+    orderBy: { date: 'desc' },
+  });
+
+  return appointments;
+};
+
+/**
+ * Get all active (non-deleted) staff for admin appointment management
+ */
+export const getActiveStaffForAdmin = async () => {
+  // Auto-reactivate staff whose deactivatedUntil has passed
+  await prisma.staffProfile.updateMany({
+    where: {
+      isActive: false,
+      isDeleted: false,
+      deactivatedUntil: { lte: new Date(), not: null },
+    },
+    data: {
+      isActive: true,
+      deactivationReason: null,
+      deactivatedUntil: null,
+    },
+  });
+
+  const staff = await prisma.user.findMany({
+    where: {
+      role: Role.STAFF,
+      staffProfile: { isDeleted: false },
+    },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      isActive: true,
+      staffProfile: {
+        select: {
+          id: true,
+          imageUrl: true,
+          isActive: true,
+          isDeleted: true,
+          deactivationReason: true,
+          deactivatedUntil: true,
+          position: true,
+          _count: { select: { appointments: true } },
+        },
+      },
+    },
+    orderBy: { firstName: 'asc' },
+  });
+
+  return staff;
 };

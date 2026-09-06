@@ -36,8 +36,8 @@ function ProfileForm({ profile, onSave, onCancel }: Props) {
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Edit Profile</h2>
+    <div className="bg-white p-5 sm:p-8 rounded-lg shadow-sm border border-gray-100 max-w-2xl mx-auto">
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6">Edit Profile</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -125,7 +125,7 @@ function ProfileForm({ profile, onSave, onCancel }: Props) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 border-t border-gray-100 mt-6">
           <Button type="button" onClick={onCancel} variant="secondary">Cancel</Button>
           <Button type="submit">Save Changes</Button>
         </div>

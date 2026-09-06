@@ -1,11 +1,13 @@
 import { useState } from "react";
 import StaffCard from "./StaffCard";
 import { useData } from "../../../context/DataContext";
+import { useLanguage } from "../../../context/LanguageContext";
 import Button from "../../../components/Button";
 import { api } from "../../../services/api";
 
 function StaffGrid() {
   const { staffList } = useData();
+  const { t, localizeStaff } = useLanguage();
   const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [detailedStaff, setDetailedStaff] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -32,13 +34,16 @@ function StaffGrid() {
 
   if (staffList.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-500">
-        No staff members found.
+      <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 mt-8 text-gray-500">
+        <div className="text-4xl mb-3">👥</div>
+        <p className="font-medium text-gray-700">{t('staff.noStaffFound', 'No staff members currently available.')}</p>
       </div>
     );
   }
 
   // Calculate rating summary
+  const currentStaff = detailedStaff || selectedStaff;
+  const staffLoc = currentStaff ? localizeStaff(currentStaff) : null;
   const ratings = detailedStaff?.staffProfile?.ratings || [];
   const ratingCount = ratings.length;
   const avgRating = ratingCount > 0 
@@ -53,73 +58,102 @@ function StaffGrid() {
         ))}
       </div>
 
-      {selectedStaff && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative my-8 max-h-[90vh] flex flex-col">
+      {selectedStaff && staffLoc && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl relative my-auto max-h-[90vh] flex flex-col animate-[fadeIn_0.2s_ease-out]">
             <button 
               onClick={handleClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold cursor-pointer"
+              className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-400 hover:text-gray-700 text-2xl font-bold cursor-pointer p-1 leading-none"
+              aria-label="Close"
             >
               &times;
             </button>
             
-            <div className="flex items-center gap-4 mb-6 flex-shrink-0">
+            <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-6 flex-shrink-0 pr-6">
               {(selectedStaff.staffProfile?.imageUrl || selectedStaff.imageUrl || selectedStaff.image) ? (
                 <img
                   src={selectedStaff.staffProfile?.imageUrl || selectedStaff.imageUrl || selectedStaff.image}
                   alt={selectedStaff.user?.firstName || selectedStaff.firstName}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-pink-200 shadow-sm"
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-pink-200 shadow-sm flex-shrink-0"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-2xl font-bold">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-pink-100 flex items-center justify-center text-pink-600 text-xl sm:text-2xl font-bold flex-shrink-0">
                   {(selectedStaff.user?.firstName || selectedStaff.firstName)?.[0]}
                   {(selectedStaff.user?.lastName || selectedStaff.lastName)?.[0]}
                 </div>
               )}
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800 truncate">
                   {selectedStaff.user?.firstName || selectedStaff.firstName} {selectedStaff.user?.lastName || selectedStaff.lastName}
                 </h2>
-                <p className="text-pink-600 font-medium">
-                  {selectedStaff.staffProfile?.position || selectedStaff.position || "Stylist"}
+                <p className="text-pink-600 font-medium text-xs sm:text-sm truncate">
+                  {staffLoc.position}
                 </p>
               </div>
             </div>
-            
-            <div className="space-y-6 overflow-y-auto flex-grow pr-2">
+            {/* Deactivation Notice */}
+            {(currentStaff?.isActive === false || currentStaff?.staffProfile?.isActive === false || currentStaff?.user?.isActive === false) && (
+              <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900">
+                <div className="flex items-center gap-2 font-semibold text-sm text-amber-800">
+                  <span>⚠️</span>
+                  <span>{t('staff.currentlyUnavailable', 'Currently Unavailable')}</span>
+                </div>
+                {(currentStaff?.staffProfile?.deactivationReason || currentStaff?.deactivationReason) && (
+                  <p className="text-xs text-amber-700 mt-1 pl-6">
+                    <span className="font-medium">{t('staff.reason', 'Reason:')}</span> {currentStaff?.staffProfile?.deactivationReason || currentStaff?.deactivationReason}
+                  </p>
+                )}
+                {(currentStaff?.staffProfile?.deactivatedUntil || currentStaff?.deactivatedUntil) && (
+                  <p className="text-xs text-amber-600 mt-0.5 pl-6">
+                    <span className="font-medium">{t('staff.availableAfter', 'Expected to return:')}</span> {new Date(currentStaff?.staffProfile?.deactivatedUntil || currentStaff?.deactivatedUntil).toLocaleDateString()}
+                  </p>
+                )}
+                <p className="text-[11px] text-amber-600/80 mt-1.5 pl-6 italic">
+                  {t('staff.deactivatedBookingNotice', 'This staff member cannot be booked while unavailable.')}
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-5 sm:space-y-6 overflow-y-auto flex-grow pr-1">
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider mb-1">Biography</h3>
-                <p className="text-gray-600 text-sm leading-relaxed">
-                  {selectedStaff.staffProfile?.bio || selectedStaff.bio || "No biography available."}
+                <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wider mb-1">
+                  {t('staff.biography', 'Biography')}
+                </h3>
+                <p className="text-gray-600 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+                  {staffLoc.bio}
                 </p>
               </div>
 
               <div>
-                <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider mb-2">Rating & Reviews</h3>
+                <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wider mb-2">
+                  {t('staff.ratingReviews', 'Rating & Reviews')}
+                </h3>
                 {loadingDetails ? (
-                  <div className="text-sm text-gray-400 py-2 animate-pulse">Loading reviews...</div>
+                  <div className="text-sm text-gray-400 py-2 animate-pulse">{t('common.loading', 'Loading reviews...')}</div>
                 ) : (
                   <div>
                     <div className="flex items-baseline gap-2 mb-4 bg-pink-50/50 p-3 rounded-xl border border-pink-100/50">
-                      <span className="text-3xl font-extrabold text-pink-700">{avgRating}</span>
-                      <span className="text-yellow-400 text-lg">{"★".repeat(Math.round(Number(avgRating)))}{"☆".repeat(5 - Math.round(Number(avgRating)))}</span>
-                      <span className="text-sm text-gray-500">({ratingCount} {ratingCount === 1 ? "review" : "reviews"})</span>
+                      <span className="text-2xl sm:text-3xl font-extrabold text-pink-700">{avgRating}</span>
+                      <span className="text-yellow-400 text-base sm:text-lg">{"★".repeat(Math.round(Number(avgRating)))}{"☆".repeat(5 - Math.round(Number(avgRating)))}</span>
+                      <span className="text-xs sm:text-sm text-gray-500">({ratingCount} {ratingCount === 1 ? t('staff.review', 'review') : t('staff.reviews', 'reviews')})</span>
                     </div>
 
                     <div className="space-y-3">
                       {ratings.length === 0 ? (
-                        <p className="text-sm text-gray-400 italic py-2">No reviews yet for this stylist.</p>
+                        <p className="text-xs sm:text-sm text-gray-400 italic py-2">
+                          {t('staff.noReviewsYet', 'No reviews yet for this stylist.')}
+                        </p>
                       ) : (
                         ratings.map((rating: any) => (
                           <div key={rating.id} className="border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-semibold text-gray-800">
+                              <span className="text-xs sm:text-sm font-semibold text-gray-800">
                                 {rating.user?.firstName || "Customer"} {rating.user?.lastName || ""}
                               </span>
                               <span className="text-yellow-400 text-xs">{"★".repeat(rating.score)}{"☆".repeat(5 - rating.score)}</span>
                             </div>
                             {rating.comment ? (
-                              <p className="text-sm text-gray-600 italic bg-gray-50 p-2.5 rounded-lg">
+                              <p className="text-xs sm:text-sm text-gray-600 italic bg-gray-50 p-2.5 rounded-lg">
                                 "{rating.comment}"
                               </p>
                             ) : (
@@ -134,8 +168,8 @@ function StaffGrid() {
               </div>
             </div>
             
-            <div className="mt-6 flex justify-end border-t border-gray-100 pt-4 flex-shrink-0">
-              <Button onClick={handleClose}>Close</Button>
+            <div className="mt-5 sm:mt-6 flex justify-end border-t border-gray-100 pt-3 sm:pt-4 flex-shrink-0">
+              <Button onClick={handleClose} className="w-full sm:w-auto">{t('common.close', 'Close')}</Button>
             </div>
           </div>
         </div>
@@ -144,4 +178,4 @@ function StaffGrid() {
   );
 }
 
-export default StaffGrid;
+export default StaffGrid;

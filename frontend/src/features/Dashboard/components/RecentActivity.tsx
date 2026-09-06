@@ -7,8 +7,8 @@ interface Props {
 
 function RecentActivity({ activities }: Props) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Recent Activity</h2>
       
       {activities.length === 0 ? (
         <p className="text-gray-500 text-center py-4">No recent activity.</p>

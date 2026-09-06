@@ -72,21 +72,23 @@ function AdminLandingPage() {
   }
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 space-y-8">
-      <div className="flex justify-between items-center pb-4 border-b border-gray-100">
+    <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm border border-gray-100 space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-gray-100">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Landing Page Management</h2>
           <p className="text-xs text-gray-500 mt-1">Customize the public landing page hero, story, images, statistics, and section visibility.</p>
         </div>
-        <Button onClick={handleSubmit} disabled={saving}>
-          {saving ? 'Saving...' : '💾 Save All Changes'}
-        </Button>
+        <div className="shrink-0">
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? 'Saving...' : '💾 Save All Changes'}
+          </Button>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
         
         {/* ─── 1. HERO SECTION ─── */}
-        <div className="bg-pink-50/40 p-5 rounded-xl border border-pink-100 space-y-4">
+        <div className="bg-pink-50/40 p-4 sm:p-5 rounded-xl border border-pink-100 space-y-4">
           <h3 className="text-sm font-bold text-pink-700 uppercase tracking-wider">1. Hero Section</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -138,7 +140,7 @@ function AdminLandingPage() {
         </div>
 
         {/* ─── 2. ABOUT STORY SECTION ─── */}
-        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+        <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">2. About Studio Story</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -179,7 +181,7 @@ function AdminLandingPage() {
         </div>
 
         {/* ─── 3. STATS & NUMBERS ─── */}
-        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+        <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">3. Statistics & Achievements</h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -217,10 +219,10 @@ function AdminLandingPage() {
         </div>
 
         {/* ─── 4. SECTION VISIBILITY CONTROLS ─── */}
-        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+        <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">4. Section Visibility Toggles</h3>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer">
               <input
                 type="checkbox"
@@ -261,7 +263,7 @@ function AdminLandingPage() {
         </div>
 
         {/* ─── 5. CONTACT & LOCATION INFO ─── */}
-        <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 space-y-4">
+        <div className="bg-gray-50 p-4 sm:p-5 rounded-xl border border-gray-200 space-y-4">
           <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wider">5. Footer Contact & Hours</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -308,7 +310,7 @@ function AdminLandingPage() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+        <div className="flex flex-wrap justify-end gap-3 pt-4 border-t border-gray-100">
           <Button type="button" variant="secondary" onClick={fetchSettings}>
             Reset Changes
           </Button>

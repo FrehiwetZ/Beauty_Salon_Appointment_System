@@ -7,8 +7,12 @@ export const createStaffSchema = z.object({
     password: z.string().min(6),
     firstName: z.string().min(1),
     lastName: z.string().min(1),
-    bio: z.string().optional(),
-    position: z.string().optional(),
+    bio: z.string().optional().or(z.literal('')),
+    bioAm: z.string().optional().or(z.literal('')),
+    bioOm: z.string().optional().or(z.literal('')),
+    position: z.string().optional().or(z.literal('')),
+    positionAm: z.string().optional().or(z.literal('')),
+    positionOm: z.string().optional().or(z.literal('')),
     imageUrl: z.string().optional().or(z.literal('')),
     serviceIds: z.array(z.string().min(1)).min(1, 'At least one service is required for a staff member'),
   }),
@@ -18,12 +22,17 @@ export const updateStaffSchema = z.object({
   body: z.object({
     firstName: z.string().optional(),
     lastName: z.string().optional(),
-    bio: z.string().optional(),
-    position: z.string().optional(),
+    bio: z.string().optional().or(z.literal('')),
+    bioAm: z.string().optional().or(z.literal('')),
+    bioOm: z.string().optional().or(z.literal('')),
+    position: z.string().optional().or(z.literal('')),
+    positionAm: z.string().optional().or(z.literal('')),
+    positionOm: z.string().optional().or(z.literal('')),
     imageUrl: z.string().optional().or(z.literal('')),
     isActive: z.boolean().optional(),
   }),
 });
+
 
 export const assignServicesSchema = z.object({
   body: z.object({

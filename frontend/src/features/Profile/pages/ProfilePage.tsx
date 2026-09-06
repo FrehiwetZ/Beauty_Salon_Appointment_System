@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import ProfileDetails from '../components/ProfileDetails';
@@ -7,10 +7,12 @@ import { mockProfile } from '../data/mockProfile';
 import { UserProfile } from '../types/profile';
 import { useAuth } from '../../../context/AuthContext';
 import { useNavigation } from '../../../context/NavigationContext';
+import { useLanguage } from '../../../context/LanguageContext';
 
 function ProfilePage() {
-  const { user, isAuthenticated, login } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const { setPage } = useNavigation();
+  const { t } = useLanguage();
   const [isEditing, setIsEditing] = useState(false);
   
   // Create a profile object based on the authenticated user
@@ -36,8 +38,7 @@ function ProfilePage() {
     
     // Update the AuthContext user to reflect name/email changes
     if (user) {
-      login({
-        ...user,
+      updateUser({
         email: updatedProfile.email,
         name: `${updatedProfile.firstName} ${updatedProfile.lastName}`.trim()
       });
@@ -50,12 +51,12 @@ function ProfilePage() {
     <div className="min-h-screen bg-pink-50 flex flex-col">
       <Navbar />
 
-      <main className="flex-grow w-full max-w-6xl mx-auto px-5 py-12">
-        <div className="text-center mb-10">
-          <p className="text-pink-600 font-medium">My Account</p>
-          <h1 className="text-4xl font-bold text-gray-800 mt-2">User Profile</h1>
-          <p className="text-gray-600 mt-3">
-            Manage your personal information and preferences.
+      <main className="flex-grow w-full max-w-6xl mx-auto px-4 sm:px-5 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-10">
+          <p className="text-pink-600 font-medium text-sm">{t('profile.myAccount')}</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mt-2">{t('profile.title')}</h1>
+          <p className="text-gray-600 mt-3 text-sm sm:text-base">
+            {t('profile.subtitle')}
           </p>
         </div>
 

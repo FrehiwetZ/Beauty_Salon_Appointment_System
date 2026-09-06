@@ -8,6 +8,7 @@ import AdminServices from '../components/AdminServices';
 import AdminAppointments from '../components/AdminAppointments';
 import AdminNews from '../components/AdminNews';
 import AdminLandingPage from '../components/AdminLandingPage';
+import AdminBranding from '../components/AdminBranding';
 import { mockAdminStats } from '../types/admin';
 import { dashboardService } from '../../../services/dashboard.service';
 
@@ -39,6 +40,8 @@ function AdminPage() {
       case 'overview':
       case 'reports': // Simplification: showing overview for reports too
         return <DataOverview stats={stats} />;
+      case 'branding':
+        return <AdminBranding />;
       case 'landing':
         return <AdminLandingPage />;
       case 'users':
@@ -60,13 +63,13 @@ function AdminPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
 
-      <main className="flex-grow w-full max-w-7xl mx-auto px-5 py-8">
+      <main className="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-5 py-6 sm:py-8">
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="w-full md:w-64 flex-shrink-0">
+          <div className="w-full md:w-64 md:flex-shrink-0">
             <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
-          
-          <div className="flex-grow">
+
+          <div className="flex-grow min-w-0">
             {renderContent()}
           </div>
         </div>

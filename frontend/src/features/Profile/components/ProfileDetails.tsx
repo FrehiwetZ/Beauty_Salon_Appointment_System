@@ -9,7 +9,7 @@ interface Props {
 
 function ProfileDetails({ profile, onEdit }: Props) {
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100 max-w-2xl mx-auto">
+    <div className="bg-white p-5 sm:p-8 rounded-lg shadow-sm border border-gray-100 max-w-2xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Personal Information</h2>
         <Button onClick={onEdit} variant="secondary">Edit Profile</Button>

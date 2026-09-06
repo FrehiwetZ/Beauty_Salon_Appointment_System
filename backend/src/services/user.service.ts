@@ -42,14 +42,24 @@ export const updateUser = async (id: string, data: any) => {
 export const getAllUsers = async (page: number, limit: number, search?: string) => {
   const skip = (page - 1) * limit;
 
-  const whereClause: any = {};
+  // Manage Users displays ONLY registered normal users/customers (Role USER)
+  const whereClause: any = {
+    role: 'USER',
+  };
+
   if (search) {
-    whereClause.OR = [
-      { firstName: { contains: search, mode: 'insensitive' } },
-      { lastName: { contains: search, mode: 'insensitive' } },
-      { username: { contains: search, mode: 'insensitive' } },
-      { email: { contains: search, mode: 'insensitive' } },
+    whereClause.AND = [
+      { role: 'USER' },
+      {
+        OR: [
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { username: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+        ],
+      },
     ];
+    delete whereClause.role;
   }
 
   const [users, total] = await Promise.all([

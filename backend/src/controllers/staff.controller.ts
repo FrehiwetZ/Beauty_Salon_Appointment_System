@@ -524,3 +524,115 @@ export const getWorkingHours = async (
     next(error);
   }
 };
+
+// ==========================================
+// SOFT DELETE STAFF
+// ==========================================
+export const softDeleteStaff = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await staffService.softDeleteStaff(
+      req.params.id as string
+    );
+    return sendSuccess(res, 200, 'Staff member deleted successfully', result);
+  } catch (error: any) {
+    if (error?.message === 'Staff not found') {
+      return sendError(res, 404, error.message);
+    }
+    next(error);
+  }
+};
+
+// ==========================================
+// DEACTIVATE STAFF
+// ==========================================
+export const deactivateStaff = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { reason, deactivatedUntil } = req.body;
+    if (!reason || !String(reason).trim()) {
+      return sendError(res, 400, 'Deactivation reason is required');
+    }
+    const result = await staffService.deactivateStaff(
+      req.params.id as string,
+      String(reason).trim(),
+      deactivatedUntil || undefined
+    );
+    return sendSuccess(res, 200, 'Staff member deactivated', result);
+  } catch (error: any) {
+    if (error?.message === 'Staff not found') {
+      return sendError(res, 404, error.message);
+    }
+    if (error?.message === 'Staff member has been deleted') {
+      return sendError(res, 400, error.message);
+    }
+    next(error);
+  }
+};
+
+// ==========================================
+// REACTIVATE STAFF
+// ==========================================
+export const reactivateStaff = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const result = await staffService.reactivateStaff(
+      req.params.id as string
+    );
+    return sendSuccess(res, 200, 'Staff member reactivated', result);
+  } catch (error: any) {
+    if (error?.message === 'Staff not found') {
+      return sendError(res, 404, error.message);
+    }
+    if (error?.message === 'Cannot reactivate a deleted staff member') {
+      return sendError(res, 400, error.message);
+    }
+    next(error);
+  }
+};
+
+// ==========================================
+// GET STAFF APPOINTMENTS (admin)
+// ==========================================
+export const getStaffAppointments = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const appointments = await staffService.getStaffAppointments(
+      req.params.id as string
+    );
+    return sendSuccess(res, 200, 'Staff appointments retrieved', appointments);
+  } catch (error: any) {
+    if (error?.message === 'Staff not found') {
+      return sendError(res, 404, error.message);
+    }
+    next(error);
+  }
+};
+
+// ==========================================
+// GET ACTIVE STAFF FOR ADMIN (appointment view)
+// ==========================================
+export const getActiveStaffForAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const staff = await staffService.getActiveStaffForAdmin();
+    return sendSuccess(res, 200, 'Active staff retrieved', staff);
+  } catch (error) {
+    next(error);
+  }
+};

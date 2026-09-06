@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import AuthLayout from '../components/AuthLayout';
 import Button from '../../../components/Button';
-import { useAuth } from '../../../context/AuthContext';
-import { useNavigation } from '../../../context/NavigationContext';
+import { useLanguage } from '../../../context/LanguageContext';
 import { authService } from '../../../services/auth.service';
 
 interface Props {
@@ -13,12 +12,13 @@ function RegisterPage({ onGoToLogin }: Props) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const { login } = useAuth();
-  const { setPage, redirectAfterLogin, setRedirectAfterLogin } = useNavigation();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     try {
       const parts = name.trim().split(' ');
@@ -35,58 +35,64 @@ function RegisterPage({ onGoToLogin }: Props) {
       });
 
       if (response.success) {
-        // Automatically login after successful registration could be done here, 
-        // but for now let's just go to login or automatically use the new user if your backend returns a token on register
         onGoToLogin();
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || t('auth.registrationFailed'));
     }
   };
 
   return (
-    <AuthLayout title="Create Account" subtitle={redirectAfterLogin ? "Sign up to book your appointment." : "Sign up to book your next appointment."}>
+    <AuthLayout 
+      title={t('auth.createAccount')} 
+      subtitle={t('auth.joinUs')}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="bg-red-50 text-red-600 p-3 rounded text-sm mb-4">
+            {error}
+          </div>
+        )}
         <div className="flex flex-col">
-          <label className="text-sm text-gray-500 font-medium mb-1">Full Name</label>
+          <label className="text-sm text-gray-500 font-medium mb-1">{t('common.name')}</label>
           <input 
             type="text" 
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500"
+            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 bg-white text-gray-800"
             required
           />
         </div>
         <div className="flex flex-col">
-          <label className="text-sm text-gray-500 font-medium mb-1">Email</label>
+          <label className="text-sm text-gray-500 font-medium mb-1">{t('auth.email')}</label>
           <input 
             type="email" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500"
+            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 bg-white text-gray-800"
             required
           />
         </div>
         <div className="flex flex-col">
-          <label className="text-sm text-gray-500 font-medium mb-1">Password</label>
+          <label className="text-sm text-gray-500 font-medium mb-1">{t('auth.password')}</label>
           <input 
             type="password" 
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500"
+            className="border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-pink-500 bg-white text-gray-800"
             required
           />
         </div>
         
         <div className="pt-2">
-          <Button type="submit" className="w-full justify-center">Sign Up</Button>
+          <Button type="submit" className="w-full justify-center">{t('auth.register')}</Button>
         </div>
       </form>
       
       <p className="text-center text-sm text-gray-500 mt-6">
-        Already have an account?{' '}
-        <button onClick={onGoToLogin} className="text-pink-600 hover:underline font-medium">
-          Sign in
+        {t('auth.haveAccount')}{' '}
+        <button onClick={onGoToLogin} className="text-pink-600 hover:underline font-medium cursor-pointer">
+          {t('auth.signIn')}
         </button>
       </p>
     </AuthLayout>

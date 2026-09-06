@@ -1,10 +1,8 @@
 import React, { ComponentPropsWithoutRef } from "react";
 
-// Define allowed variants and sizes
 type ButtonVariant = "primary" | "secondary" | "danger" | "success";
 type ButtonSize = "sm" | "md" | "lg";
 
-// Extend native HTML button attributes so standard props like `className`, `aria-*`, etc., work out of the box
 interface ButtonProps extends ComponentPropsWithoutRef<"button"> {
   children?: React.ReactNode;
   variant?: ButtonVariant;
@@ -12,16 +10,16 @@ interface ButtonProps extends ComponentPropsWithoutRef<"button"> {
 }
 
 const styles: Record<ButtonVariant, string> = {
-  primary: "bg-pink-600 text-white hover:bg-pink-700",
-  secondary: "bg-gray-200 text-gray-800 hover:bg-gray-300",
-  danger: "bg-red-600 text-white hover:bg-red-700",
-  success: "bg-green-600 text-white hover:bg-green-700",
+  primary: "bg-gradient-to-r from-pink-600 via-rose-500 to-pink-600 hover:from-pink-700 hover:via-rose-600 hover:to-pink-700 text-white shadow-sm hover:shadow-md hover:shadow-pink-500/25 hover:-translate-y-0.5",
+  secondary: "bg-white text-gray-700 border border-gray-200/90 hover:border-pink-300 hover:text-pink-700 hover:bg-pink-50/40 shadow-xs hover:-translate-y-0.5",
+  danger: "bg-rose-600 text-white hover:bg-rose-700 shadow-sm hover:shadow-md hover:-translate-y-0.5",
+  success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md hover:-translate-y-0.5",
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "px-3 py-1 text-sm",
-  md: "px-5 py-2",
-  lg: "px-7 py-3 text-lg",
+  sm: "px-3.5 py-1.5 text-xs font-semibold rounded-lg",
+  md: "px-5 py-2.5 text-sm font-semibold rounded-xl",
+  lg: "px-7 py-3.5 text-base font-bold rounded-2xl",
 };
 
 export function Button({
@@ -38,10 +36,10 @@ export function Button({
       type={type}
       disabled={disabled}
       className={`
-        rounded-lg font-medium transition-all duration-150 select-none
+        inline-flex items-center justify-center gap-2 select-none font-medium transition-all duration-200
         ${styles[variant]}
         ${sizes[size]}
-        ${disabled ? "opacity-50 cursor-not-allowed" : "active:scale-[0.98] shadow-sm hover:shadow active:shadow-inner cursor-pointer"}
+        ${disabled ? "opacity-50 cursor-not-allowed transform-none shadow-none" : "active:translate-y-0 active:scale-[0.98] cursor-pointer"}
         ${className}
       `.trim()}
       {...props}
@@ -51,4 +49,4 @@ export function Button({
   );
 }
 
-export default Button;
+export default Button;

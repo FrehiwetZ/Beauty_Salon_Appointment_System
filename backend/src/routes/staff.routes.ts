@@ -115,4 +115,42 @@ router.delete(
     staffController.deleteBlockedPeriod
 );
 
+// ==========================================
+// ADMIN APPOINTMENT VIEW
+// ==========================================
+
+router.get(
+    '/admin/active',
+    authorizeRoles('ADMIN'),
+    staffController.getActiveStaffForAdmin
+);
+
+router.get(
+    '/:id/appointments',
+    authorizeRoles('ADMIN'),
+    staffController.getStaffAppointments
+);
+
+// ==========================================
+// ADMIN STAFF STATUS MANAGEMENT
+// ==========================================
+
+router.delete(
+    '/:id/soft-delete',
+    authorizeRoles('ADMIN'),
+    staffController.softDeleteStaff
+);
+
+router.patch(
+    '/:id/deactivate',
+    authorizeRoles('ADMIN'),
+    staffController.deactivateStaff
+);
+
+router.patch(
+    '/:id/reactivate',
+    authorizeRoles('ADMIN'),
+    staffController.reactivateStaff
+);
+
 export default router;
