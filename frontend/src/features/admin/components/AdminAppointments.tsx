@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '../../../services/api';
 import { useLanguage } from '../../../context/LanguageContext';
-import StatusBadge from '../../../components/StatusBadge';
 
 /* ─────────────────── Types ─────────────────── */
 interface StaffMember {
