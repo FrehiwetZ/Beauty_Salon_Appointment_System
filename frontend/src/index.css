@@ -58,3 +58,10 @@ h1, h2, h3, .font-serif {
 ::-webkit-scrollbar-thumb:hover {
   background: #f472b6;
 }
+
+/* Bottom nav spacer — prevent fixed bottom bar from covering content on mobile */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 68px; /* height of bottom nav bar */
+  }
+}

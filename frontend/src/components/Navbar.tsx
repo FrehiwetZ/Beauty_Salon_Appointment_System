@@ -5,6 +5,36 @@ import { useBranding } from "../context/BrandingContext";
 import { useLanguage } from "../context/LanguageContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 
+// ── SVG Icon components for bottom nav (inline, no dependency) ──────────────
+const IconHome = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+);
+const IconServices = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+);
+const IconStaff = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+);
+const IconDashboard = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+);
+const IconAppointments = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>
+);
+const IconProfile = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+);
+
+// Map of page IDs to their icon components
+const iconMap: Record<string, React.FC> = {
+  landing: IconHome,
+  dashboard: IconDashboard,
+  services: IconServices,
+  staff: IconStaff,
+  appointments: IconAppointments,
+  profile: IconProfile,
+};
+
 function Navbar() {
   const [open, setOpen] = useState(false);
   const { page, setPage } = useNavigation();
@@ -32,6 +62,19 @@ function Navbar() {
     { id: 'services', label: t('nav.services') },
     { id: 'staff', label: t('nav.stylists') },
     { id: 'appointments', label: t('nav.appointments') },
+    { id: 'profile', label: t('nav.myProfile') },
+  ];
+
+  // Bottom nav shows the top 4-5 most important items (or all for guests since there are only 3)
+  const bottomNavItems = !isAuthenticated ? [
+    { id: 'landing', label: t('nav.home') },
+    { id: 'services', label: t('nav.servicesMenu') },
+    { id: 'staff', label: t('nav.masterStylists') },
+  ] : [
+    { id: 'dashboard', label: t('nav.dashboard') },
+    { id: 'services', label: t('nav.services') },
+    { id: 'appointments', label: t('nav.appointments') },
+    { id: 'staff', label: t('nav.stylists') },
     { id: 'profile', label: t('nav.myProfile') },
   ];
 
@@ -191,16 +234,21 @@ function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
-        <div className="flex items-center gap-1.5 sm:gap-2 md:hidden">
+        {/* Mobile Menu Button — hamburger on the RIGHT side */}
+        <div className="flex items-center gap-2 md:hidden">
           <LanguageSwitcher variant="navbar" />
           <button 
-            className="w-10 h-10 rounded-xl bg-pink-50 text-pink-700 flex items-center justify-center text-xl font-bold focus:outline-none cursor-pointer hover:bg-pink-100 transition-colors active:scale-95"
+            className="w-10 h-10 rounded-xl bg-pink-50 text-pink-700 flex items-center justify-center focus:outline-none cursor-pointer hover:bg-pink-100 transition-colors active:scale-95"
             onClick={() => setOpen(!open)}
             aria-label="Toggle navigation menu"
             aria-expanded={open}
           >
-            {open ? '✕' : '☰'}
+            {/* Animated hamburger-to-X icon */}
+            <div className="w-5 h-4 flex flex-col justify-between items-center relative">
+              <span className={`block w-5 h-0.5 bg-pink-700 rounded-full transition-all duration-300 origin-center ${open ? 'rotate-45 translate-y-[7px]' : ''}`} />
+              <span className={`block w-5 h-0.5 bg-pink-700 rounded-full transition-all duration-200 ${open ? 'opacity-0 scale-x-0' : 'opacity-100'}`} />
+              <span className={`block w-5 h-0.5 bg-pink-700 rounded-full transition-all duration-300 origin-center ${open ? '-rotate-45 -translate-y-[7px]' : ''}`} />
+            </div>
           </button>
         </div>
 
@@ -209,16 +257,18 @@ function Navbar() {
           <div className="absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl shadow-2xl p-5 sm:p-6 flex flex-col gap-2 md:hidden border-b border-rose-100 z-50 max-h-[calc(100vh-65px)] overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
             {navItems.map(item => {
               const isActive = page === item.id;
+              const IconComp = iconMap[item.id];
               return (
                 <button 
                   key={item.id} 
                   onClick={() => handleNav(item.id)}
-                  className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
+                  className={`flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer ${
                     isActive
                       ? 'bg-pink-600 text-white shadow-sm'
                       : 'text-gray-700 hover:bg-pink-50/70 hover:text-pink-600'
                   }`}
                 >
+                  {IconComp && <IconComp />}
                   {item.label}
                 </button>
               );
@@ -270,8 +320,53 @@ function Navbar() {
           aria-hidden="true"
         />
       )}
+
+      {/* ── Mobile Bottom Navigation Bar ─────────────────────────────── */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {/* Subtle top edge glow */}
+        <div className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-pink-300/60 to-transparent" />
+        
+        <div className="bg-white/90 backdrop-blur-xl border-t border-rose-100/80 shadow-[0_-4px_20px_-4px_rgba(236,72,153,0.08)]">
+          <div className="flex items-stretch justify-around px-1 py-1">
+            {bottomNavItems.map(item => {
+              const isActive = page === item.id;
+              const IconComp = iconMap[item.id];
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleNav(item.id)}
+                  className={`
+                    flex flex-col items-center justify-center gap-0.5 flex-1 py-2 px-1 rounded-xl
+                    transition-all duration-200 cursor-pointer relative
+                    ${isActive
+                      ? 'text-pink-600'
+                      : 'text-gray-400 active:text-pink-500'
+                    }
+                  `}
+                >
+                  {/* Active indicator dot */}
+                  {isActive && (
+                    <span className="absolute -top-1 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-500" />
+                  )}
+                  
+                  <span className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}>
+                    {IconComp ? <IconComp /> : <IconHome />}
+                  </span>
+                  <span className={`text-[10px] leading-tight font-semibold truncate max-w-[60px] ${
+                    isActive ? 'text-pink-600' : 'text-gray-400'
+                  }`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
     </>
   );
 }
 export default Navbar;
-
