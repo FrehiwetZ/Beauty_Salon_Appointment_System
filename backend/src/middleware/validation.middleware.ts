@@ -2,6 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodTypeAny, ZodError } from 'zod';
 import { sendError } from '../utils/response';
 
+/**
+ * validateRequest
+ *
+ * Middleware factory that validates req.body, req.query, and req.params
+ * against the provided Zod schema.
+ * Returns a 400 error with field-level messages on validation failure.
+ */
 export const validateRequest = (schema: ZodTypeAny) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
