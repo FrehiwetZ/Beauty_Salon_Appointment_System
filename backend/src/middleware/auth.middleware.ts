@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 import { sendError } from '../utils/response';
 
+/**
+ * authMiddleware
+ *
+ * Protects routes by verifying the Bearer token in the Authorization header.
+ * Attaches the decoded token payload to `req.user` on success.
+ */
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
