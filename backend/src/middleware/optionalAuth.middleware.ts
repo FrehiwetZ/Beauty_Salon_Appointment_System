@@ -18,7 +18,7 @@ export const extractOptionalUser = (req: Request, res: Response, next: NextFunct
       const payload = verifyToken(token);
       req.user = payload;
     } catch (error) {
-      // Ignore error for optional auth
+      // Token is invalid or expired — silently ignore and continue as guest
     }
   }
 
