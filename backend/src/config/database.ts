@@ -10,3 +10,4 @@ import { PrismaClient } from '@prisma/client';
  * @see https://www.prisma.io/docs/concepts/components/prisma-client
  */
 export const prisma = new PrismaClient();
+// Note: Prisma connects lazily — the actual DB connection is made on first query
