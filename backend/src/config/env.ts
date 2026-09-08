@@ -19,6 +19,7 @@ const envSchema = z.object({
   // Default expiry of 7 days — override in production via JWT_EXPIRES_IN env var
   JWT_EXPIRES_IN: z.string().default('7d'),
   ADMIN_USERNAME: z.string().default('admin'),
+  // IMPORTANT: override this default in production with a strong password
   ADMIN_PASSWORD: z.string().default('Admin@12345'),
 });
 
