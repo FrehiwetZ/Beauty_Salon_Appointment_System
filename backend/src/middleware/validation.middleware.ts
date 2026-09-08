@@ -24,6 +24,7 @@ export const validateRequest = (schema: ZodTypeAny) => {
       next();
     } catch (error: any) {
       if (error instanceof ZodError) {
+        // Format each Zod issue into a readable "field: message" string
         const message = error.issues.map((e: any) => `${e.path.join('.') || 'field'}: ${e.message}`).join(', ');
         return sendError(res, 400, `Validation Error: ${message}`);
       }
