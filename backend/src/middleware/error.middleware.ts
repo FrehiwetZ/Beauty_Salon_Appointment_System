@@ -21,6 +21,7 @@ export const errorMiddleware = (
   res.status(statusCode).json({
     success: false,
     message,
+    // Include stack trace in development for easier debugging
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
