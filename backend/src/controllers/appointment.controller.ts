@@ -61,6 +61,8 @@ export const getMyAppointments = async (req: Request, res: Response, next: NextF
     const role = req.user!.role;
 
     let appointments;
+    // Staff members are linked via their StaffProfile, not directly by userId,
+    // so we must resolve the staffProfile.id before querying appointments.
     if (role === 'STAFF') {
       // Find staff profile ID
       const { prisma } = require('../config/database');
