@@ -16,6 +16,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   JWT_SECRET: z.string().min(1, 'JWT_SECRET is required'),
+  // Default expiry of 7 days — override in production via JWT_EXPIRES_IN env var
   JWT_EXPIRES_IN: z.string().default('7d'),
   ADMIN_USERNAME: z.string().default('admin'),
   ADMIN_PASSWORD: z.string().default('Admin@12345'),
