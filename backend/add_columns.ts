@@ -1,3 +1,20 @@
+/**
+ * =============================================================
+ * Add Columns Migration Script
+ * =============================================================
+ * This script adds multilingual (Amharic & Oromo) columns to
+ * the Service, StaffProfile, and Post tables, then populates
+ * them with initial translated content.
+ *
+ * Tables affected:
+ *   - Service: nameAm, nameOm, descriptionAm, descriptionOm, categoryAm, categoryOm
+ *   - StaffProfile: bioAm, bioOm, positionAm, positionOm
+ *   - Post: titleAm, titleOm, contentAm, contentOm
+ *
+ * Usage: npx tsx add_columns.ts
+ * =============================================================
+ */
+
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
