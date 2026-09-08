@@ -1,3 +1,15 @@
+/**
+ * Staff Controller
+ *
+ * Handles HTTP request/response logic for staff-related operations:
+ * - Listing and retrieving staff members
+ * - Creating and updating staff profiles
+ * - Assigning and removing services from staff
+ * - Managing blocked periods (time-off / unavailability)
+ * - Managing working hours
+ * - Staff status management (soft-delete, deactivate, reactivate)
+ * - Fetching staff appointments (admin view)
+ */
 import { Request, Response, NextFunction } from 'express';
 import * as staffService from '../services/staff.service';
 import { sendSuccess, sendError } from '../utils/response';
@@ -44,9 +56,8 @@ export const getStaffById = async (
   next: NextFunction
 ) => {
   try {
-    const staff = await staffService.getStaffById(
-      req.params.id as string
-    );
+    const staffId = req.params.id as string;
+    const staff = await staffService.getStaffById(staffId);
 
     return sendSuccess(
       res,
@@ -76,16 +87,9 @@ export const createStaff = async (
   next: NextFunction
 ) => {
   try {
-    console.log('================================');
-    console.log('CREATE STAFF REQUEST');
-    console.log('BODY:', req.body);
-    console.log('================================');
-
     const staff = await staffService.createStaff(
       req.body
     );
-
-    console.log('STAFF CREATED:', staff.id);
 
     return sendSuccess(
       res,
@@ -94,13 +98,6 @@ export const createStaff = async (
       staff
     );
   } catch (error: any) {
-    console.error('================================');
-    console.error('CREATE STAFF ERROR');
-    console.error(error);
-    console.error('MESSAGE:', error?.message);
-    console.error('STACK:', error?.stack);
-    console.error('================================');
-
     // Duplicate email
     if (
       error?.message === 'Email already in use'
@@ -300,12 +297,12 @@ export const createBlockedPeriod = async (
   next: NextFunction
 ) => {
   try {
-    // Staff can create blocked periods
-    // for themselves, admins for anyone.
+    const staffId = req.params.id as string;
+
+    // Authorization: staff may only block their own time; admins may block for any staff member
     if (
       req.user!.role !== 'ADMIN' &&
-      req.user!.id !==
-      (req.params.id as string)
+      req.user!.id !== staffId
     ) {
       return sendError(
         res,
@@ -316,7 +313,7 @@ export const createBlockedPeriod = async (
 
     const blockedPeriod =
       await staffService.createBlockedPeriod(
-        req.params.id as string,
+        staffId,
         req.body
       );
 

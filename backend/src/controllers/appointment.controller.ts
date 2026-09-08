@@ -1,9 +1,21 @@
+/**
+ * Appointment Controller
+ *
+ * Handles all HTTP request/response logic for appointment operations:
+ * - Availability checking
+ * - Creating, retrieving, and listing appointments
+ * - Updating appointment status (confirm, cancel, complete)
+ * - Rescheduling appointments
+ */
 import { Request, Response, NextFunction } from 'express';
 import * as appointmentService from '../services/appointment.service';
 import * as availabilityService from '../services/availability.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { AppointmentStatus } from '@prisma/client';
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET AVAILABILITY
+// ──────────────────────────────────────────────────────────────────────────────
 export const getAvailability = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { serviceId, date, staffId } = req.query;
@@ -18,13 +30,18 @@ export const getAvailability = async (req: Request, res: Response, next: NextFun
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// CREATE APPOINTMENT
+// ──────────────────────────────────────────────────────────────────────────────
 export const createAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const appointment = await appointmentService.createAppointment(userId, req.body);
     return sendSuccess(res, 201, 'Appointment created successfully', appointment);
   } catch (error: any) {
-    // Pass specific booking conflict messages directly to client
+    // These errors come from the booking validation layer and represent
+    // scheduling conflicts (e.g., double-booking, outside working hours).
+    // They are forwarded to the client as 409 Conflict instead of 500.
     if (
       error.message === 'Staff is already booked at this time' ||
       error.message === 'Appointment time is outside staff working hours' ||
@@ -37,12 +54,17 @@ export const createAppointment = async (req: Request, res: Response, next: NextF
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET MY APPOINTMENTS
+// ──────────────────────────────────────────────────────────────────────────────
 export const getMyAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const role = req.user!.role;
 
     let appointments;
+    // Staff members are linked via their StaffProfile, not directly by userId,
+    // so we must resolve the staffProfile.id before querying appointments.
     if (role === 'STAFF') {
       // Find staff profile ID
       const { prisma } = require('../config/database');
@@ -59,10 +81,16 @@ export const getMyAppointments = async (req: Request, res: Response, next: NextF
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET ALL APPOINTMENTS (Admin)
+// ──────────────────────────────────────────────────────────────────────────────
 export const getAllAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Parse pagination params (default: page 1, 10 items per page)
     const page = parseInt(req.query.page as string || '1');
     const limit = parseInt(req.query.limit as string || '10');
+
+    // Optional filters passed as query parameters
     const status = req.query.status as AppointmentStatus | undefined;
     const date = req.query.date as string | undefined;
     const staffId = req.query.staffId as string | undefined;
@@ -76,13 +104,17 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// UPDATE APPOINTMENT STATUS
+// ──────────────────────────────────────────────────────────────────────────────
 export const updateAppointmentStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const appointmentId = req.params.id as string;
     const userId = req.user!.id;
     const role = req.user!.role;
     const { status, cancellationReason } = req.body;
-    
-    const appointment = await appointmentService.updateAppointmentStatus((req.params.id as string), userId, role, status, cancellationReason);
+
+    const appointment = await appointmentService.updateAppointmentStatus(appointmentId, userId, role, status, cancellationReason);
     return sendSuccess(res, 200, 'Appointment status updated successfully', appointment);
   } catch (error: any) {
     if (error.message === 'Appointment not found') return sendError(res, 404, error.message);
@@ -92,11 +124,15 @@ export const updateAppointmentStatus = async (req: Request, res: Response, next:
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// RESCHEDULE APPOINTMENT
+// ──────────────────────────────────────────────────────────────────────────────
 export const rescheduleAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const appointmentId = req.params.id as string;
     const userId = req.user!.id;
     const role = req.user!.role;
-    const appointment = await appointmentService.rescheduleAppointment((req.params.id as string), userId, role, req.body);
+    const appointment = await appointmentService.rescheduleAppointment(appointmentId, userId, role, req.body);
     return sendSuccess(res, 200, 'Appointment rescheduled successfully', appointment);
   } catch (error: any) {
     if (error.message === 'Appointment not found') return sendError(res, 404, error.message);
