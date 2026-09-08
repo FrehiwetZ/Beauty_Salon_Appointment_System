@@ -1,3 +1,15 @@
+/**
+ * =============================================================
+ * Check Data Script
+ * =============================================================
+ * Diagnostic script that queries and logs all Services, Staff
+ * Profiles, and Posts from the database. Useful for verifying
+ * seed data and debugging database content.
+ *
+ * Usage: npx tsx check_data.ts
+ * =============================================================
+ */
+
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
