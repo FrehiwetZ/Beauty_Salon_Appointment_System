@@ -56,9 +56,8 @@ export const getStaffById = async (
   next: NextFunction
 ) => {
   try {
-    const staff = await staffService.getStaffById(
-      req.params.id as string
-    );
+    const staffId = req.params.id as string;
+    const staff = await staffService.getStaffById(staffId);
 
     return sendSuccess(
       res,
