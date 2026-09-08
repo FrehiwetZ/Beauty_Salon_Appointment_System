@@ -1,5 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * errorMiddleware
+ *
+ * Global error handler for Express.
+ * Must be registered as the last middleware in the app.
+ * Returns stack trace only in development mode.
+ */
 export const errorMiddleware = (
   err: any,
   req: Request,
