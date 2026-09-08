@@ -1,0 +1,73 @@
+# =============================================================
+# Docker Compose - Beauty Salon Appointment System
+# =============================================================
+# This file defines the multi-container setup for the
+# Beauty Salon Appointment System including the backend API,
+# frontend client, and PostgreSQL database.
+# =============================================================
+
+version: "3.8"
+
+services:
+  # -----------------------------------------------------------
+  # PostgreSQL Database Service
+  # -----------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: beauty_salon_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-salon_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-salon_pass}
+      POSTGRES_DB: ${DB_NAME:-beauty_salon}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-salon_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -----------------------------------------------------------
+  # Backend API Service (Node.js + Express + Prisma)
+  # -----------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: beauty_salon_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-salon_user}:${DB_PASSWORD:-salon_pass}@db:5432/${DB_NAME:-beauty_salon}
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
+      PORT: 5000
+    ports:
+      - "5000:5000"
+
+  # -----------------------------------------------------------
+  # Frontend Client Service (React + Vite)
+  # -----------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: beauty_salon_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://backend:5000/api/v1
+    ports:
+      - "5173:5173"
+
+# =============================================================
+# Named Volumes
+# =============================================================
+volumes:
+  pgdata:
+    driver: local
