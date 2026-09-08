@@ -21,6 +21,7 @@ const envSchema = z.object({
   ADMIN_PASSWORD: z.string().default('Admin@12345'),
 });
 
+// Validate process.env against the schema — use safeParse to avoid throwing
 const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
