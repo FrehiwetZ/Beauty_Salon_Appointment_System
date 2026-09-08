@@ -102,11 +102,12 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
 // ──────────────────────────────────────────────────────────────────────────────
 export const updateAppointmentStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const appointmentId = req.params.id as string;
     const userId = req.user!.id;
     const role = req.user!.role;
     const { status, cancellationReason } = req.body;
 
-    const appointment = await appointmentService.updateAppointmentStatus((req.params.id as string), userId, role, status, cancellationReason);
+    const appointment = await appointmentService.updateAppointmentStatus(appointmentId, userId, role, status, cancellationReason);
     return sendSuccess(res, 200, 'Appointment status updated successfully', appointment);
   } catch (error: any) {
     if (error.message === 'Appointment not found') return sendError(res, 404, error.message);
@@ -121,9 +122,10 @@ export const updateAppointmentStatus = async (req: Request, res: Response, next:
 // ──────────────────────────────────────────────────────────────────────────────
 export const rescheduleAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const appointmentId = req.params.id as string;
     const userId = req.user!.id;
     const role = req.user!.role;
-    const appointment = await appointmentService.rescheduleAppointment((req.params.id as string), userId, role, req.body);
+    const appointment = await appointmentService.rescheduleAppointment(appointmentId, userId, role, req.body);
     return sendSuccess(res, 200, 'Appointment rescheduled successfully', appointment);
   } catch (error: any) {
     if (error.message === 'Appointment not found') return sendError(res, 404, error.message);
