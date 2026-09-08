@@ -15,6 +15,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     return sendError(res, 401, 'Unauthorized: No token provided');
   }
 
+  // Extract token from "Bearer <token>" format
   const token = authHeader.split(' ')[1];
 
   try {
