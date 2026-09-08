@@ -1,3 +1,15 @@
+/**
+ * Staff Controller
+ *
+ * Handles HTTP request/response logic for staff-related operations:
+ * - Listing and retrieving staff members
+ * - Creating and updating staff profiles
+ * - Assigning and removing services from staff
+ * - Managing blocked periods (time-off / unavailability)
+ * - Managing working hours
+ * - Staff status management (soft-delete, deactivate, reactivate)
+ * - Fetching staff appointments (admin view)
+ */
 import { Request, Response, NextFunction } from 'express';
 import * as staffService from '../services/staff.service';
 import { sendSuccess, sendError } from '../utils/response';
