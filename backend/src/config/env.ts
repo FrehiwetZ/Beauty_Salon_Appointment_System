@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
+/**
+ * env.ts
+ *
+ * Loads and validates environment variables at startup using Zod.
+ * The application exits immediately if required variables are missing
+ * or invalid, preventing silent misconfiguration in any environment.
+ */
 dotenv.config();
 
 const envSchema = z.object({
