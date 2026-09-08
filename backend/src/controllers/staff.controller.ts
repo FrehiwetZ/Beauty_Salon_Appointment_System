@@ -297,12 +297,12 @@ export const createBlockedPeriod = async (
   next: NextFunction
 ) => {
   try {
-    // Staff can create blocked periods
-    // for themselves, admins for anyone.
+    const staffId = req.params.id as string;
+
+    // Authorization: staff may only block their own time; admins may block for any staff member
     if (
       req.user!.role !== 'ADMIN' &&
-      req.user!.id !==
-      (req.params.id as string)
+      req.user!.id !== staffId
     ) {
       return sendError(
         res,
@@ -313,7 +313,7 @@ export const createBlockedPeriod = async (
 
     const blockedPeriod =
       await staffService.createBlockedPeriod(
-        req.params.id as string,
+        staffId,
         req.body
       );
 
