@@ -13,6 +13,9 @@ import * as availabilityService from '../services/availability.service';
 import { sendSuccess, sendError } from '../utils/response';
 import { AppointmentStatus } from '@prisma/client';
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET AVAILABILITY
+// ──────────────────────────────────────────────────────────────────────────────
 export const getAvailability = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { serviceId, date, staffId } = req.query;
@@ -27,6 +30,9 @@ export const getAvailability = async (req: Request, res: Response, next: NextFun
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// CREATE APPOINTMENT
+// ──────────────────────────────────────────────────────────────────────────────
 export const createAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
@@ -46,6 +52,9 @@ export const createAppointment = async (req: Request, res: Response, next: NextF
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET MY APPOINTMENTS
+// ──────────────────────────────────────────────────────────────────────────────
 export const getMyAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
@@ -68,6 +77,9 @@ export const getMyAppointments = async (req: Request, res: Response, next: NextF
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// GET ALL APPOINTMENTS (Admin)
+// ──────────────────────────────────────────────────────────────────────────────
 export const getAllAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string || '1');
@@ -85,12 +97,15 @@ export const getAllAppointments = async (req: Request, res: Response, next: Next
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// UPDATE APPOINTMENT STATUS
+// ──────────────────────────────────────────────────────────────────────────────
 export const updateAppointmentStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
     const role = req.user!.role;
     const { status, cancellationReason } = req.body;
-    
+
     const appointment = await appointmentService.updateAppointmentStatus((req.params.id as string), userId, role, status, cancellationReason);
     return sendSuccess(res, 200, 'Appointment status updated successfully', appointment);
   } catch (error: any) {
@@ -101,6 +116,9 @@ export const updateAppointmentStatus = async (req: Request, res: Response, next:
   }
 };
 
+// ──────────────────────────────────────────────────────────────────────────────
+// RESCHEDULE APPOINTMENT
+// ──────────────────────────────────────────────────────────────────────────────
 export const rescheduleAppointment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
