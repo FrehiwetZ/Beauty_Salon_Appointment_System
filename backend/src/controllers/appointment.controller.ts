@@ -39,7 +39,9 @@ export const createAppointment = async (req: Request, res: Response, next: NextF
     const appointment = await appointmentService.createAppointment(userId, req.body);
     return sendSuccess(res, 201, 'Appointment created successfully', appointment);
   } catch (error: any) {
-    // Pass specific booking conflict messages directly to client
+    // These errors come from the booking validation layer and represent
+    // scheduling conflicts (e.g., double-booking, outside working hours).
+    // They are forwarded to the client as 409 Conflict instead of 500.
     if (
       error.message === 'Staff is already booked at this time' ||
       error.message === 'Appointment time is outside staff working hours' ||
