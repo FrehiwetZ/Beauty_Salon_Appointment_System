@@ -18,6 +18,7 @@ export const validateRequest = (schema: ZodTypeAny) => {
         params: req.params,
       });
       if (parsed && typeof parsed === 'object' && 'body' in parsed && parsed.body !== undefined) {
+        // Overwrite req.body with the parsed (and possibly transformed) version
         req.body = parsed.body;
       }
       next();
