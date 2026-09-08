@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
  */
 dotenv.config();
 
+// Define the shape and constraints of all required environment variables
 const envSchema = z.object({
   PORT: z.string().default('5000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
