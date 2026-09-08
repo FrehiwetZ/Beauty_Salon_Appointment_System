@@ -1,3 +1,11 @@
+/**
+ * Auth Controller
+ *
+ * Handles authentication-related HTTP request/response logic:
+ * - User registration
+ * - User login
+ * - Fetching the currently authenticated user's profile
+ */
 import { Request, Response, NextFunction } from 'express';
 import * as authService from '../services/auth.service';
 import { sendSuccess, sendError } from '../utils/response';
