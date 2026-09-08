@@ -1,3 +1,12 @@
+/**
+ * Appointment Controller
+ *
+ * Handles all HTTP request/response logic for appointment operations:
+ * - Availability checking
+ * - Creating, retrieving, and listing appointments
+ * - Updating appointment status (confirm, cancel, complete)
+ * - Rescheduling appointments
+ */
 import { Request, Response, NextFunction } from 'express';
 import * as appointmentService from '../services/appointment.service';
 import * as availabilityService from '../services/availability.service';
