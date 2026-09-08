@@ -86,8 +86,11 @@ export const getMyAppointments = async (req: Request, res: Response, next: NextF
 // ──────────────────────────────────────────────────────────────────────────────
 export const getAllAppointments = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Parse pagination params (default: page 1, 10 items per page)
     const page = parseInt(req.query.page as string || '1');
     const limit = parseInt(req.query.limit as string || '10');
+
+    // Optional filters passed as query parameters
     const status = req.query.status as AppointmentStatus | undefined;
     const date = req.query.date as string | undefined;
     const staffId = req.query.staffId as string | undefined;
