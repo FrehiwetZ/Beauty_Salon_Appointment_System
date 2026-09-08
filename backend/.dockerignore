@@ -1,0 +1,19 @@
+# =============================================================
+# Docker Ignore - Backend
+# =============================================================
+# Excludes unnecessary files from the Docker build context
+# to reduce image size and speed up builds.
+# =============================================================
+
+node_modules
+dist
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+.git
+.gitignore
+README.md
+uploads/*
+!uploads/.gitkeep
