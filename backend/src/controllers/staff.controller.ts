@@ -76,16 +76,9 @@ export const createStaff = async (
   next: NextFunction
 ) => {
   try {
-    console.log('================================');
-    console.log('CREATE STAFF REQUEST');
-    console.log('BODY:', req.body);
-    console.log('================================');
-
     const staff = await staffService.createStaff(
       req.body
     );
-
-    console.log('STAFF CREATED:', staff.id);
 
     return sendSuccess(
       res,
@@ -94,13 +87,6 @@ export const createStaff = async (
       staff
     );
   } catch (error: any) {
-    console.error('================================');
-    console.error('CREATE STAFF ERROR');
-    console.error(error);
-    console.error('MESSAGE:', error?.message);
-    console.error('STACK:', error?.stack);
-    console.error('================================');
-
     // Duplicate email
     if (
       error?.message === 'Email already in use'
