@@ -26,6 +26,7 @@ const _env = envSchema.safeParse(process.env);
 
 if (!_env.success) {
   console.error('Invalid environment variables:', _env.error.format());
+  // Exit early — running with missing env vars causes unpredictable behavior
   process.exit(1);
 }
 
