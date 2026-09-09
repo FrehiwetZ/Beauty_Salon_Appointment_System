@@ -1,5 +1,12 @@
+/**
+ * Database Configuration
+ * Initializes and exports a singleton Prisma Client instance
+ * for database access throughout the application.
+ */
+
 import { PrismaClient } from '@prisma/client';
 
+<<<<<<< HEAD
 /**
  * prisma
  *
@@ -9,5 +16,8 @@ import { PrismaClient } from '@prisma/client';
  *
  * @see https://www.prisma.io/docs/concepts/components/prisma-client
  */
+=======
+/** Singleton Prisma Client instance */
+>>>>>>> 0f26774 (update backend configuration and middleware)
 export const prisma = new PrismaClient();
 // Note: Prisma connects lazily — the actual DB connection is made on first query

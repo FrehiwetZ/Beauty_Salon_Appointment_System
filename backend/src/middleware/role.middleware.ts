@@ -1,13 +1,19 @@
+/**
+ * Role-Based Authorization Middleware
+ * Restricts route access to users with specific roles.
+ * Must be used after authMiddleware to ensure req.user exists.
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { sendError } from '../utils/response';
 
 /**
- * authorizeRoles
+ * Creates middleware that only allows access to specified roles.
+ * @param roles - Allowed roles (e.g., 'ADMIN', 'STAFF')
+ * @returns Express middleware that checks the user's role
  *
- * Middleware factory that restricts route access to specific user roles.
- * Must be used after authMiddleware so that req.user is already populated.
- *
- * @param roles - One or more allowed role strings (e.g. 'admin', 'stylist')
+ * @example
+ * router.get('/admin-only', authMiddleware, authorizeRoles('ADMIN'), controller);
  */
 export const authorizeRoles = (...roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {

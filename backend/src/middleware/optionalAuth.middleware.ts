@@ -1,13 +1,16 @@
+/**
+ * Optional Authentication Middleware
+ * Attempts to extract and verify a JWT token if present,
+ * but does NOT reject requests without a token.
+ * Useful for routes that work for both guests and logged-in users.
+ */
+
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 
 /**
- * extractOptionalUser
- *
- * Middleware that attempts to decode the Bearer token if present.
- * Does NOT reject the request if the token is missing or invalid —
- * it simply skips user attachment and calls next().
- * Useful for routes accessible to both guests and authenticated users.
+ * Extracts user info from the token if provided.
+ * Unlike authMiddleware, this always calls next() regardless of token validity.
  */
 export const extractOptionalUser = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -18,7 +21,7 @@ export const extractOptionalUser = (req: Request, res: Response, next: NextFunct
       const payload = verifyToken(token);
       req.user = payload;
     } catch (error) {
-      // Token is invalid or expired — silently ignore and continue as guest
+      // Token is invalid or expired — silently continue as guest
     }
   }
 

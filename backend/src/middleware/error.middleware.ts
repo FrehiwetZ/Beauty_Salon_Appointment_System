@@ -1,11 +1,17 @@
+/**
+ * Global Error Handling Middleware
+ * Catches all unhandled errors and returns a standardized
+ * JSON error response. Includes stack traces in development mode.
+ */
+
 import { Request, Response, NextFunction } from 'express';
 
 /**
- * errorMiddleware
- *
- * Global error handler for Express.
- * Must be registered as the last middleware in the app.
- * Returns stack trace only in development mode.
+ * Express error handler — must have 4 parameters to be recognized as error middleware.
+ * @param err - The error object thrown or passed via next(err)
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next function
  */
 export const errorMiddleware = (
   err: any,
@@ -21,7 +27,6 @@ export const errorMiddleware = (
   res.status(statusCode).json({
     success: false,
     message,
-    // Include stack trace in development for easier debugging
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
