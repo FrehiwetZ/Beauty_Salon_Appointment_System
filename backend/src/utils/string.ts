@@ -32,7 +32,10 @@ export const capitalize = (str: string): string => {
  * formatFullName('Jane', undefined) // 'Jane'
  * formatFullName(undefined, undefined) // 'Unknown'
  */
-export const formatFullName = (firstName?: string | null, lastName?: string | null): string => {
+export const formatFullName = (
+  firstName?: string | null,
+  lastName?: string | null
+): string => {
   const parts = [firstName, lastName].filter(Boolean);
   return parts.length > 0 ? parts.join(' ') : 'Unknown';
 };
