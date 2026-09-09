@@ -25,5 +25,3 @@ export const updatePostSchema = z.object({
     status: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
   }),
 });
-
-
